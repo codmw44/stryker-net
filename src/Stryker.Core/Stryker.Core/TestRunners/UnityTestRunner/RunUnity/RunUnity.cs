@@ -24,7 +24,6 @@ public class RunUnity : IRunUnity
     private string _currentUnityRunArguments;
 
     private string _pathToUnityListenFile;
-    private string _pathToActiveMutantsListenFile;
     private Task _unityProcessTask;
 
 
@@ -69,7 +68,7 @@ public class RunUnity : IRunUnity
         var pathToTestResultXml =
             Path.Combine(strykerOptions.OutputPath, $"test_results_{DateTime.Now.ToFileTime()}.xml");
 
-        File.WriteAllText(_pathToActiveMutantsListenFile, activeMutantId);
+        Environment.SetEnvironmentVariable("ActiveMutation", activeMutantId);
 
         SendCommandToUnity(pathToTestResultXml);
         WaitUntilEndOfCommand();
@@ -116,8 +115,6 @@ public class RunUnity : IRunUnity
 
         _pathToUnityListenFile = Path.Combine(strykerOptions.OutputPath, "UnityListens.txt");
         Environment.SetEnvironmentVariable("Stryker.Unity.PathToListen", _pathToUnityListenFile);
-        _pathToActiveMutantsListenFile = Path.Combine(strykerOptions.OutputPath, "ActiveMutantsListens.txt");
-        Environment.SetEnvironmentVariable("ActiveMutationPath", _pathToActiveMutantsListenFile);
 
         CleanupCommandBuffer();
 

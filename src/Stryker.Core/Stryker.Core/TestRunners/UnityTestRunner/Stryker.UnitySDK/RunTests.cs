@@ -12,12 +12,12 @@ using UnityEngine.TestTools;
 
 namespace Stryker.UnitySDK
 {
-    public static class RunTests
+	public static class RunTests
 	{
 		public static bool TestsInProgress = false;
 
-        [InitializeOnLoadMethod]
-        public static void Run()
+		[InitializeOnLoadMethod]
+		public static void Run()
 		{
 			EditorCoroutine.Start(Coroutine());
 		}
@@ -27,10 +27,10 @@ namespace Stryker.UnitySDK
 			Console.WriteLine("[Stryker] Run coroutine");
 			var textFileToListen = Environment.GetEnvironmentVariable("Stryker.Unity.PathToListen");
 
-            if (string.IsNullOrEmpty(textFileToListen) || !File.Exists(textFileToListen))
-            {
-                yield break;
-            }
+			if (string.IsNullOrEmpty(textFileToListen) || !File.Exists(textFileToListen))
+			{
+				yield break;
+			}
 
 			string _runnedPathToOutput = string.Empty;
 			var testRunnerApi = ScriptableObject.CreateInstance<TestRunnerApi>();
@@ -38,25 +38,39 @@ namespace Stryker.UnitySDK
 
 			while (true)
 			{
-
-                var command = File.ReadAllText(textFileToListen);
+				var command = File.ReadAllText(textFileToListen);
 				if (command == "exit")
 				{
 					Console.WriteLine("[Stryker] Got exit. Close unity");
+					PlayerPrefs.SetInt("Stryker.DomainWasReloaded", 0);
 
 					EditorApplication.Exit(0);
 					yield break;
 				}
-                if (command == "reloadDomain")
-                {
-                    Console.WriteLine($"[Stryker][{DateTime.Now.ToLongTimeString()}] Got reloadDomain");
 
-                    File.WriteAllText(textFileToListen, string.Empty);
+				if (command == "reloadDomain")
+				{
+					Console.WriteLine($"[Stryker][{DateTime.Now.ToLongTimeString()}] Got reloadDomain");
 
-                    EditorUtility.RequestScriptReload();
-                }
+					File.WriteAllText(textFileToListen, string.Empty);
+					PlayerPrefs.SetInt("Stryker.DomainWasReloaded", 0);
+
+					EditorUtility.RequestScriptReload();
+                    yield break;
+				}
 				else if (!string.IsNullOrWhiteSpace(command))
 				{
+                    if (PlayerPrefs.GetInt("Stryker.DomainWasReloaded") == 0)
+                    {
+                        PlayerPrefs.SetInt("Stryker.DomainWasReloaded", 1);
+                        PlayerPrefs.Save();
+                        Console.WriteLine("[Stryker] RequestScriptReload");
+
+                        EditorUtility.RequestScriptReload();
+                        yield break;
+                    }
+					PlayerPrefs.SetInt("Stryker.DomainWasReloaded", 0);
+
 					_runnedPathToOutput = command;
 					Console.WriteLine($"[Stryker][{DateTime.Now.ToLongTimeString()}] Got RequestToRunTests");
 					Console.WriteLine("[Stryker] Start testRunnerApi.Execute with path " + command);
@@ -65,12 +79,13 @@ namespace Stryker.UnitySDK
 					testRunnerApi.Execute(executionSettings);
 					TestsInProgress = true;
 
-                    while (TestsInProgress)
-                    {
-                        yield return new WaitForSeconds(1f);
-                    }
-                    File.WriteAllText(textFileToListen, string.Empty);
-                }
+					while (TestsInProgress)
+					{
+						yield return new WaitForSeconds(1f);
+					}
+
+					File.WriteAllText(textFileToListen, string.Empty);
+				}
 				else
 				{
 					// Console.WriteLine("[Stryker] did not Got RequestToRun. wait 1s");

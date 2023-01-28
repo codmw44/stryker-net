@@ -19,7 +19,6 @@ public class UnityTestRunner : ITestRunner
     private readonly IRunUnity _runUnity;
     private TestSet _testSet = null;
     private TestRunResult _initialRunTestResult;
-    private bool _firstMutationTestStarted;
 
     public UnityTestRunner(StrykerOptions strykerOptions, ILogger logger,
         IRunUnity runUnity)
@@ -61,12 +60,6 @@ public class UnityTestRunner : ITestRunner
     public TestRunResult TestMultipleMutants(ITimeoutValueCalculator timeoutCalc, IReadOnlyList<Mutant> mutants,
         TestUpdateHandler update)
     {
-        if (!_firstMutationTestStarted)
-        {
-            //rerun unity to apply modifications and reload domain
-            _runUnity.ReloadDomain(_strykerOptions, _strykerOptions.WorkingDirectory);
-        }
-
         var testResultsXml = RunTests(out var duration, mutants.Single().Id.ToString());
 
         var passedTests = GetPassedTests(testResultsXml);
@@ -79,8 +72,6 @@ public class UnityTestRunner : ITestRunner
             // all mutants status have been resolved, we can stop
             _logger.LogDebug("Each mutant's fate has been established, we can stop.");
         }
-
-        _firstMutationTestStarted = true;
 
         return new TestRunResult(passedTests, failedTests, GetTimeoutTestGuidsList(), string.Empty, duration);
     }
