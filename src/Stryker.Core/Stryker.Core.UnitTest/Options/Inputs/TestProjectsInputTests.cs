@@ -1,43 +1,45 @@
 using System.IO;
 using Shouldly;
-using Stryker.Core.Options.Inputs;
-using Xunit;
+using Stryker.Abstractions.Options.Inputs;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Stryker.Utilities;
+using Stryker.Core.UnitTest;
 
-namespace Stryker.Core.UnitTest.Options.Inputs
+namespace Stryker.Core.UnitTest.Options.Inputs;
+
+[TestClass]
+public class TestProjectsInputTests : TestBase
 {
-    public class TestProjectsInputTests : TestBase
+    [TestMethod]
+    public void ShouldHaveHelpText()
     {
-        [Fact]
-        public void ShouldHaveHelpText()
-        {
-            var target = new TestProjectsInput();
-            target.HelpText.ShouldBe(@"Specify the test projects. | default: []");
-        }
+        var target = new TestProjectsInput();
+        target.HelpText.ShouldBe(@"Specify the test projects. | default: []");
+    }
 
-        [Fact]
-        public void ShouldUseDefaultWhenNull()
-        {
-            var input = new TestProjectsInput { SuppliedInput = null };
+    [TestMethod]
+    public void ShouldUseDefaultWhenNull()
+    {
+        var input = new TestProjectsInput { SuppliedInput = null };
 
-            input.Validate().ShouldBeEmpty();
-        }
+        input.Validate().ShouldBeEmpty();
+    }
 
-        [Fact]
-        public void ShouldIgnoreEmptyString()
-        {
-            var input = new TestProjectsInput { SuppliedInput = new[] { "", "", "" } };
+    [TestMethod]
+    public void ShouldIgnoreEmptyString()
+    {
+        var input = new TestProjectsInput { SuppliedInput = new[] { "", "", "" } };
 
-            input.Validate().ShouldBeEmpty();
-        }
+        input.Validate().ShouldBeEmpty();
+    }
 
-        [Fact]
-        public void ShouldNormalizePaths()
-        {
-            var paths = new[] { "/c/root/bla/test.csproj" };
-            var expected = new[] { Path.GetFullPath(FilePathUtils.NormalizePathSeparators(paths[0])) };
-            var input = new TestProjectsInput { SuppliedInput = paths };
+    [TestMethod]
+    public void ShouldNormalizePaths()
+    {
+        var paths = new[] { "/c/root/bla/test.csproj" };
+        var expected = new[] { Path.GetFullPath(FilePathUtils.NormalizePathSeparators(paths[0])) };
+        var input = new TestProjectsInput { SuppliedInput = paths };
 
-            input.Validate().ShouldBe(expected);
-        }
+        input.Validate().ShouldBe(expected);
     }
 }

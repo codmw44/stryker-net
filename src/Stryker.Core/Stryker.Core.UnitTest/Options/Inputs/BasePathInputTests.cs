@@ -1,52 +1,53 @@
 using System.IO.Abstractions.TestingHelpers;
 using Shouldly;
-using Stryker.Core.Exceptions;
-using Stryker.Core.Options.Inputs;
-using Xunit;
+using Stryker.Abstractions.Exceptions;
+using Stryker.Abstractions.Options.Inputs;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Stryker.Core.UnitTest;
 
-namespace Stryker.Core.UnitTest.Options.Inputs
+namespace Stryker.Core.UnitTest.Options.Inputs;
+
+[TestClass]
+public class BasePathInputTests : TestBase
 {
-    public class BasePathInputTests : TestBase
+    [TestMethod]
+    public void ShouldHaveHelpText()
     {
-        [Fact]
-        public void ShouldHaveHelpText()
-        {
-            var target = new BasePathInput();
-            target.HelpText.ShouldBe(@$"The path from which stryker is started.");
-        }
+        var target = new BasePathInput();
+        target.HelpText.ShouldBe(@$"The path from which stryker is started.");
+    }
 
-        [Fact]
-        public void ShouldAllowExistingDir()
-        {
-            var target = new BasePathInput { SuppliedInput = "C:/MyDir/" };
-            var fileSystemMock = new MockFileSystem();
-            fileSystemMock.AddDirectory("C:/MyDir/");
+    [TestMethod]
+    public void ShouldAllowExistingDir()
+    {
+        var target = new BasePathInput { SuppliedInput = "C:/MyDir/" };
+        var fileSystemMock = new MockFileSystem();
+        fileSystemMock.AddDirectory("C:/MyDir/");
 
-            var result = target.Validate(fileSystemMock);
+        var result = target.Validate(fileSystemMock);
 
-            result.ShouldBe("C:/MyDir/");
-        }
+        result.ShouldBe("C:/MyDir/");
+    }
 
-        [Fact]
-        public void ShouldThrowOnNonexistentDir()
-        {
-            var target = new BasePathInput { SuppliedInput = "C:/MyDir/" };
-            var fileSystemMock = new MockFileSystem();
+    [TestMethod]
+    public void ShouldThrowOnNonexistentDir()
+    {
+        var target = new BasePathInput { SuppliedInput = "C:/MyDir/" };
+        var fileSystemMock = new MockFileSystem();
 
-            var exception = Should.Throw<InputException>(() => target.Validate(fileSystemMock));
+        var exception = Should.Throw<InputException>(() => target.Validate(fileSystemMock));
 
-            exception.Message.ShouldBe("Base path must exist.");
-        }
+        exception.Message.ShouldBe("Base path must exist.");
+    }
 
-        [Fact]
-        public void ShouldThrowOnNull()
-        {
-            var target = new BasePathInput { SuppliedInput = null };
-            var fileSystemMock = new MockFileSystem();
+    [TestMethod]
+    public void ShouldThrowOnNull()
+    {
+        var target = new BasePathInput { SuppliedInput = null };
+        var fileSystemMock = new MockFileSystem();
 
-            var exception = Should.Throw<InputException>(() => target.Validate(fileSystemMock));
+        var exception = Should.Throw<InputException>(() => target.Validate(fileSystemMock));
 
-            exception.Message.ShouldBe("Base path can't be null or empty.");
-        }
+        exception.Message.ShouldBe("Base path can't be null or empty.");
     }
 }

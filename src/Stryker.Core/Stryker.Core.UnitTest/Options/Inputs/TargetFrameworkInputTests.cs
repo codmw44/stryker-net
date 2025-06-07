@@ -1,52 +1,53 @@
 using Shouldly;
-using Stryker.Core.Exceptions;
-using Stryker.Core.Options.Inputs;
-using Xunit;
+using Stryker.Abstractions.Exceptions;
+using Stryker.Abstractions.Options.Inputs;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Stryker.Core.UnitTest;
 
-namespace Stryker.Core.UnitTest.Options.Inputs
+namespace Stryker.Core.UnitTest.Options.Inputs;
+
+[TestClass]
+public class TargetFrameworkInputTests : TestBase
 {
-    public class TargetFrameworkInputTests : TestBase
+    [TestMethod]
+    public void ShouldHaveHelpText()
     {
-        [Fact]
-        public void ShouldHaveHelpText()
-        {
-            var target = new TargetFrameworkInput();
-            target.HelpText.ShouldBe("The framework to build the project against.");
-        }
+        var target = new TargetFrameworkInput();
+        target.HelpText.ShouldBe("The framework to build the project against.");
+    }
 
-        [Fact]
-        public void ShouldHaveDefaultNull()
-        {
-            var target = new TargetFrameworkInput { SuppliedInput = null };
+    [TestMethod]
+    public void ShouldHaveDefaultNull()
+    {
+        var target = new TargetFrameworkInput { SuppliedInput = null };
 
-            var result = target.Validate();
+        var result = target.Validate();
 
-            result.ShouldBeNull();
-        }
+        result.ShouldBeNull();
+    }
 
-        [Theory]
-        [InlineData("")]
-        [InlineData("  ")]
-        public void ShouldThrowOnEmptyInput(string input)
-        {
-            var target = new TargetFrameworkInput { SuppliedInput = input };
+    [TestMethod]
+    [DataRow("")]
+    [DataRow("  ")]
+    public void ShouldThrowOnEmptyInput(string input)
+    {
+        var target = new TargetFrameworkInput { SuppliedInput = input };
 
-            var exception = Should.Throw<InputException>(() => target.Validate());
+        var exception = Should.Throw<InputException>(() => target.Validate());
 
-            exception.Message.ShouldBe(
-                "Target framework cannot be empty. " +
-                "Please provide a valid value from this list: " +
-                "https://docs.microsoft.com/en-us/dotnet/standard/frameworks");
-        }
+        exception.Message.ShouldBe(
+            "Target framework cannot be empty. " +
+            "Please provide a valid value from this list: " +
+            "https://docs.microsoft.com/en-us/dotnet/standard/frameworks");
+    }
 
-        [Fact]
-        public void ShouldReturnFramework()
-        {
-            var target = new TargetFrameworkInput { SuppliedInput = "netcoreapp3.1" };
+    [TestMethod]
+    public void ShouldReturnFramework()
+    {
+        var target = new TargetFrameworkInput { SuppliedInput = "netcoreapp3.1" };
 
-            var result = target.Validate();
+        var result = target.Validate();
 
-            result.ShouldBe("netcoreapp3.1");
-        }
+        result.ShouldBe("netcoreapp3.1");
     }
 }

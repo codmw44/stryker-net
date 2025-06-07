@@ -1,476 +1,260 @@
 using System;
-using System.Net.Http;
+using System.IO;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
+using Azure;
+using Azure.Storage.Files.Shares;
+using Azure.Storage.Files.Shares.Models;
+using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Moq.Protected;
+using Shouldly;
+using Stryker.Abstractions;
+using Stryker.Abstractions.ProjectComponents;
 using Stryker.Core.Baseline.Providers;
-using Stryker.Core.Options;
-using Stryker.Core.ProjectComponents;
 using Stryker.Core.ProjectComponents.TestProjects;
 using Stryker.Core.Reporters.Json;
-using Xunit;
+using Stryker.Core.UnitTest.Reporters;
 
-namespace Stryker.Core.UnitTest.Baseline.Providers
+namespace Stryker.Core.UnitTest.Baseline.Providers;
+
+[TestClass]
+public class AzureFileShareBaselineProviderTests : TestBase
 {
-    public class AzureFileShareBaselineProviderTests : TestBase
+    private readonly string _uri = "https://strykernetbaseline.file.core.windows.net/baselines";
+    [TestMethod]
+    public async Task Authentication_Failure_Async()
     {
-        [Theory]
-        [InlineData("sv=AZURE_SAS_KEY")]
-        [InlineData("?sv=AZURE_SAS_KEY")]
-        public async Task Load_Calls_Correct_URL(string sas)
+        // Arrange
+        var logger = Mock.Of<ILogger<AzureFileShareBaselineProvider>>();
+
+        var options = new StrykerOptions { AzureFileStorageUrl = _uri, AzureFileStorageSas = "sv=2022-11-02&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=2023-09-14T19:05:24Z&st=2023-09-14T11:05:24Z&spr=https&sig=hMf2EN3tD8T7y8Eei3aZASKdp5x%2BOkgEVIgTfxZPC38%3D" };
+
+        // Act
+        var report = await new AzureFileShareBaselineProvider(options, null, logger).Load("v1");
+
+        // Assert
+        report.ShouldBeNull();
+
+        Mock.Get(logger).Verify(LogLevel.Warning, "Problem authenticating with azure file share. Make sure your SAS is valid.");
+        Mock.Get(logger).Verify(LogLevel.Debug, $"No baseline was found at {options.AzureFileStorageUrl}/StrykerOutput/v1/stryker-report.json");
+    }
+
+    [TestMethod]
+    public async Task Load_Report_Directory_NotFound()
+    {
+        // Arrange
+        var shareClient = Mock.Of<ShareClient>();
+        Mock.Get(shareClient).Setup(d => d.Exists(default)).Returns(Response.FromValue(true, default));
+        Mock.Get(shareClient).SetupGet(s => s.Uri).Returns(new Uri(_uri));
+
+        // root directory
+        var directoryClient = Mock.Of<ShareDirectoryClient>();
+        Mock.Get(shareClient)
+            .Setup(s => s.GetDirectoryClient("StrykerOutput"))
+            .Returns(directoryClient);
+        Mock.Get(directoryClient).Setup(d => d.Exists(default)).Returns(Response.FromValue(true, default));
+
+        // version directory
+        var subdirectoryClient = Mock.Of<ShareDirectoryClient>();
+        Mock.Get(directoryClient).Setup(d => d.GetSubdirectoryClient("v1")).Returns(subdirectoryClient);
+        Mock.Get(subdirectoryClient).Setup(d => d.Exists(default)).Returns(Response.FromValue(false, default));
+
+        // Act
+        var report = await new AzureFileShareBaselineProvider(new StrykerOptions(), shareClient).Load("v1");
+
+        // Assert
+        report.ShouldBeNull();
+
+        Mock.Get(shareClient).VerifyAll();
+        Mock.Get(shareClient).VerifyNoOtherCalls();
+
+        Mock.Get(directoryClient).VerifyAll();
+        Mock.Get(directoryClient).VerifyNoOtherCalls();
+    }
+
+    [TestMethod]
+    public async Task Load_Report_File_NotFound()
+    {
+        // Arrange
+        var shareClient = Mock.Of<ShareClient>();
+        Mock.Get(shareClient).Setup(d => d.Exists(default)).Returns(Response.FromValue(true, default));
+        Mock.Get(shareClient).SetupGet(s => s.Uri).Returns(new Uri(_uri));
+
+        // root directory
+        var directoryClient = Mock.Of<ShareDirectoryClient>();
+        Mock.Get(shareClient)
+            .Setup(s => s.GetDirectoryClient("StrykerOutput"))
+            .Returns(directoryClient);
+        Mock.Get(directoryClient).Setup(d => d.Exists(default)).Returns(Response.FromValue(true, default));
+
+        // version directory
+        var subdirectoryClient = Mock.Of<ShareDirectoryClient>();
+        Mock.Get(directoryClient).Setup(d => d.GetSubdirectoryClient("v1")).Returns(subdirectoryClient);
+        Mock.Get(subdirectoryClient).Setup(d => d.Exists(default)).Returns(Response.FromValue(true, default));
+
+        // report file
+        var fileClient = Mock.Of<ShareFileClient>();
+        Mock.Get(subdirectoryClient).Setup(d => d.GetFileClient("stryker-report.json")).Returns(fileClient);
+        Mock.Get(fileClient).Setup(f => f.ExistsAsync(default)).Returns(Task.FromResult(Response.FromValue(false, default)));
+
+        // Act
+        var report = await new AzureFileShareBaselineProvider(new StrykerOptions(), shareClient).Load("v1");
+
+        // Assert
+        report.ShouldBeNull();
+
+        Mock.Get(shareClient).VerifyAll();
+        Mock.Get(shareClient).VerifyNoOtherCalls();
+
+        Mock.Get(directoryClient).VerifyAll();
+        Mock.Get(directoryClient).VerifyNoOtherCalls();
+
+        Mock.Get(subdirectoryClient).VerifyAll();
+        Mock.Get(subdirectoryClient).VerifyNoOtherCalls();
+
+        Mock.Get(fileClient).VerifyAll();
+        Mock.Get(fileClient).VerifyNoOtherCalls();
+    }
+
+    [TestMethod]
+    public async Task Load_Report_Returns_Report()
+    {
+        // Arrange
+        var shareClient = Mock.Of<ShareClient>();
+        Mock.Get(shareClient).Setup(d => d.Exists(default)).Returns(Response.FromValue(true, default));
+        Mock.Get(shareClient).SetupGet(s => s.Uri).Returns(new Uri(_uri));
+
+        // root directory
+        var directoryClient = Mock.Of<ShareDirectoryClient>();
+        Mock.Get(shareClient)
+            .Setup(s => s.GetDirectoryClient("StrykerOutput"))
+            .Returns(directoryClient);
+        Mock.Get(directoryClient).Setup(d => d.Exists(default)).Returns(Response.FromValue(true, default));
+
+        // version directory
+        var subdirectoryClient = Mock.Of<ShareDirectoryClient>();
+        Mock.Get(directoryClient).Setup(d => d.GetSubdirectoryClient("v1")).Returns(subdirectoryClient);
+        Mock.Get(subdirectoryClient).Setup(d => d.Exists(default)).Returns(Response.FromValue(true, default));
+
+        // report file
+        var fileClient = Mock.Of<ShareFileClient>();
+        Mock.Get(subdirectoryClient).Setup(d => d.GetFileClient("stryker-report.json")).Returns(fileClient);
+        Mock.Get(fileClient).Setup(f => f.ExistsAsync(default)).Returns(Task.FromResult(Response.FromValue(true, default)));
+
+        // report file content download
+        var json = JsonReport.Build(new StrykerOptions(), ReportTestHelper.CreateProjectWith(), It.IsAny<ITestProjectsInfo>()).ToJson();
+        var file = FilesModelFactory.StorageFileDownloadInfo(content: new MemoryStream(Encoding.Default.GetBytes(json)));
+        Mock.Get(fileClient).Setup(f => f.Download(null, default)).Returns(Response.FromValue(file, default));
+
+        // Act
+        var report = await new AzureFileShareBaselineProvider(new StrykerOptions(), shareClient).Load("v1");
+
+        // Assert
+        report.ShouldNotBeNull();
+
+        Mock.Get(shareClient).VerifyAll();
+        Mock.Get(shareClient).VerifyNoOtherCalls();
+
+        Mock.Get(directoryClient).VerifyAll();
+        Mock.Get(directoryClient).VerifyNoOtherCalls();
+
+        Mock.Get(subdirectoryClient).VerifyAll();
+        Mock.Get(subdirectoryClient).VerifyNoOtherCalls();
+
+        Mock.Get(fileClient).VerifyAll();
+        Mock.Get(fileClient).VerifyNoOtherCalls();
+    }
+
+    [TestMethod]
+    [DataRow(2, 5)]
+    [DataRow(20, 200)]
+    [DataRow(100, 500)]
+    public async Task Save_Report(int folders, int files)
+    {
+        var chunkSize = 4194304;
+
+        // Arrange
+        var shareClient = Mock.Of<ShareClient>();
+        var logger = Mock.Of<ILogger<AzureFileShareBaselineProvider>>();
+
+        Mock.Get(shareClient).Setup(d => d.Exists(default)).Returns(Response.FromValue(true, Mock.Of<Response>(r => r.Status == 200)));
+        Mock.Get(shareClient).SetupGet(s => s.Uri).Returns(new Uri(_uri));
+
+        // root directory
+        var directoryClient = Mock.Of<ShareDirectoryClient>();
+        Mock.Get(shareClient)
+            .Setup(s => s.GetDirectoryClient("StrykerOutput"))
+            .Returns(directoryClient);
+        Mock.Get(directoryClient).Setup(d => d.CreateIfNotExists(default, default))
+            .Callback(() => Mock.Get(directoryClient).Setup(d => d.Exists(default)).Returns(Response.FromValue(true, Mock.Of<Response>(r => r.Status == 200))));
+
+        // version directory
+        var subdirectoryClient = Mock.Of<ShareDirectoryClient>();
+        Mock.Get(directoryClient).Setup(d => d.GetSubdirectoryClient("v1")).Returns(subdirectoryClient);
+        Mock.Get(subdirectoryClient)
+            .Setup(d => d.CreateIfNotExists(default, default))
+            .Callback(() => Mock.Get(subdirectoryClient).Setup(d => d.Exists(default)).Returns(Response.FromValue(true, Mock.Of<Response>(r => r.Status == 200))));
+
+        // report file
+        var report = JsonReport.Build(new StrykerOptions(), ReportTestHelper.CreateProjectWith(folders: folders, files: files), It.IsAny<TestProjectsInfo>());
+        var fileLength = Encoding.UTF8.GetBytes(report.ToJson()).Length;
+
+        var fullChunks = (int)Math.Floor((double)fileLength / chunkSize);
+        var lastChunkSize = fileLength - (fullChunks * chunkSize);
+
+        var fileClient = Mock.Of<ShareFileClient>();
+
+        Mock.Get(subdirectoryClient).Setup(d => d.GetFileClient("stryker-report.json")).Returns(fileClient);
+        Mock.Get(fileClient)
+            .Setup(f => f.CreateAsync(fileLength, default, default, default))
+            .Returns(Task.FromResult(Response.FromValue(Mock.Of<ShareFileInfo>(), Mock.Of<Response>(r => r.Status == 200))));
+
+        if (fullChunks > 0)
         {
-            // Arrange
-            var options = new StrykerOptions()
+            // setup full chunks upload
+            for (var i = 0; i < fullChunks; i++)
             {
-                AzureFileStorageUrl = "https://www.filestoragelocation.com",
-                AzureFileStorageSas = sas,
-                BaselineProvider = BaselineProvider.AzureFileStorage
-            };
+                var offset = i * chunkSize;
+                Mock.Get(fileClient)
+                    .Setup(f => f.UploadRangeAsync(
+                        It.Is<HttpRange>(r => r.Offset == offset && r.Length == chunkSize),
+                        It.IsAny<Stream>(), null, default))
+                    .Returns(Task.FromResult(Response.FromValue(Mock.Of<ShareFileUploadInfo>(), Mock.Of<Response>(r => r.Status == 200))));
+            }
 
-            var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
-
-            var readonlyInputComponent = new Mock<IReadOnlyProjectComponent>(MockBehavior.Loose).Object;
-
-            var jsonReport = JsonReport.Build(options, readonlyInputComponent, It.IsAny<TestProjectsInfo>());
-
-            handlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage()
-                {
-                    StatusCode = System.Net.HttpStatusCode.OK,
-                    Content = new StringContent(jsonReport.ToJson(), Encoding.UTF8, "application/json")
-                })
-                .Verifiable();
-
-            var httpClient = new HttpClient(handlerMock.Object);
-
-            var target = new AzureFileShareBaselineProvider(options, httpClient: httpClient);
-
-            var result = await target.Load("baseline/project_version");
-
-            var expectedUri = new Uri("https://www.filestoragelocation.com/StrykerOutput/baseline/project_version/stryker-report.json?sv=AZURE_SAS_KEY");
-
-            handlerMock
-                .Protected()
-                .Verify(
-                 "SendAsync",
-                 Times.Exactly(1),
-                 ItExpr.Is<HttpRequestMessage>(req =>
-                    req.Method == HttpMethod.Get
-                    && req.RequestUri == expectedUri
-                    ),
-                    ItExpr.IsAny<CancellationToken>()
-                 );
+            // setup last chunk upload
+            Mock.Get(fileClient)
+                .Setup(f => f.UploadRangeAsync(
+                    It.Is<HttpRange>(r => r.Offset == fullChunks * chunkSize && r.Length == lastChunkSize),
+                    It.IsAny<Stream>(), null, default))
+                .Returns(Task.FromResult(Response.FromValue(Mock.Of<ShareFileUploadInfo>(), Mock.Of<Response>(r => r.Status == 200))));
+        }
+        else // There's only 1 chunk
+        {
+            Mock.Get(fileClient)
+                .Setup(f => f.UploadRangeAsync(
+                    It.Is<HttpRange>(r => r.Offset == 0 && r.Length == fileLength),
+                    It.IsAny<Stream>(), null, default))
+                .Returns(Task.FromResult(Response.FromValue(Mock.Of<ShareFileUploadInfo>(), Mock.Of<Response>(r => r.Status == 200))));
         }
 
-        [Fact]
-        public async Task Save_Doesnt_Call_CreateDictionary_And_AllocateFileLocation_When_Baseline_Exists()
-        {
-            // arrange
-            var options = new StrykerOptions()
-            {
-                AzureFileStorageUrl = "https://www.filestoragelocation.com",
-                AzureFileStorageSas = "sv=AZURE_SAS_KEY",
-                BaselineProvider = BaselineProvider.AzureFileStorage
-            };
+        // Act
+        await new AzureFileShareBaselineProvider(new StrykerOptions(), shareClient, logger).Save(report, "v1");
 
-            var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        // Assert
+        Mock.Get(logger).Verify(LogLevel.Debug, $"Uploaded report chunk {fileLength}/{fileLength} to azure file share");
 
-            var readonlyInputComponent = new Mock<IReadOnlyProjectComponent>(MockBehavior.Loose).Object;
+        Mock.Get(shareClient).VerifyAll();
+        Mock.Get(shareClient).VerifyNoOtherCalls();
 
-            var jsonReport = JsonReport.Build(options, readonlyInputComponent, It.IsAny<TestProjectsInfo>());
+        Mock.Get(directoryClient).VerifyAll();
+        Mock.Get(directoryClient).VerifyNoOtherCalls();
 
-            var expectedGetUri = new Uri("https://www.filestoragelocation.com/StrykerOutput/baseline/project_version/stryker-report.json?sv=AZURE_SAS_KEY");
+        Mock.Get(subdirectoryClient).VerifyAll();
+        Mock.Get(subdirectoryClient).VerifyNoOtherCalls();
 
-            var expectedCreateDirectoryUri = new Uri("https://www.filestoragelocation.com/StrykerOutput/baseline/project_version?sv=AZURE_SAS_KEY&restype=directory");
-
-            var expectedFileAllocationUri = new Uri("https://www.filestoragelocation.com/StrykerOutput/baseline/project_version/stryker-report.json?sv=AZURE_SAS_KEY");
-
-            var expectedUploadContentUri = new Uri("https://www.filestoragelocation.com/StrykerOutput/baseline/project_version/stryker-report.json?sv=AZURE_SAS_KEY&comp=range");
-
-            handlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(requestMessage => requestMessage.RequestUri == expectedGetUri && requestMessage.Method == HttpMethod.Get),
-                ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage()
-                {
-                    StatusCode = System.Net.HttpStatusCode.OK,
-                    Content = new StringContent(jsonReport.ToJson(), Encoding.UTF8, "application/json")
-                })
-                .Verifiable();
-
-            handlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(requestMessage => requestMessage.RequestUri == expectedFileAllocationUri && requestMessage.Method == HttpMethod.Put),
-                ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage()
-                {
-                    StatusCode = System.Net.HttpStatusCode.Created,
-                    Content = new StringContent("Nothing went wrong", Encoding.UTF8, "application/json")
-                })
-                .Verifiable();
-
-            handlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(requestMessage => requestMessage.RequestUri == expectedUploadContentUri && requestMessage.Method == HttpMethod.Put),
-                ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage()
-                {
-                    StatusCode = System.Net.HttpStatusCode.OK,
-                    Content = new StringContent("Nothing went wrong", Encoding.UTF8, "application/json")
-                })
-                .Verifiable();
-
-            var target = new AzureFileShareBaselineProvider(options, new HttpClient(handlerMock.Object));
-
-            await target.Save(jsonReport, "baseline/project_version");
-
-            // assert
-            handlerMock
-               .Protected()
-               .Verify(
-                "SendAsync",
-                Times.Exactly(1),
-                ItExpr.Is<HttpRequestMessage>(req =>
-                   req.Method == HttpMethod.Get
-                   && req.RequestUri == expectedGetUri
-                   ),
-                ItExpr.IsAny<CancellationToken>());
-
-            handlerMock
-               .Protected()
-               .Verify(
-                "SendAsync",
-                Times.Exactly(0),
-                ItExpr.Is<HttpRequestMessage>(req =>
-                   req.Method == HttpMethod.Put
-                   && req.RequestUri == expectedCreateDirectoryUri
-                   ),
-                ItExpr.IsAny<CancellationToken>());
-
-            handlerMock
-              .Protected()
-              .Verify(
-               "SendAsync",
-               Times.Exactly(1),
-               ItExpr.Is<HttpRequestMessage>(req =>
-                  req.Method == HttpMethod.Put
-                  && req.RequestUri == expectedFileAllocationUri
-                  && req.Headers.Contains("x-ms-type")
-                  ),
-                ItExpr.IsAny<CancellationToken>());
-
-            handlerMock
-              .Protected()
-              .Verify(
-               "SendAsync",
-               Times.Exactly(1),
-               ItExpr.Is<HttpRequestMessage>(req =>
-                  req.Method == HttpMethod.Put
-                  && req.RequestUri == expectedUploadContentUri),
-                ItExpr.IsAny<CancellationToken>());
-        }
-
-        [Fact]
-        public async Task Save_Calls_CreateDictionaryWithProjectName_And_AllocateFileLocation_When_Baseline_Does_Not_Exists()
-        {
-            // arrange
-            var projectName = "my-project-name";
-            var projectVersion = "baseline/my-project-version";
-
-            var options = new StrykerOptions
-            {
-                AzureFileStorageUrl = "https://www.filestoragelocation.com",
-                AzureFileStorageSas = "sv=AZURE_SAS_KEY",
-                WithBaseline = false,
-                ProjectName = projectName
-            };
-
-            var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
-
-            var readonlyInputComponent = new Mock<IReadOnlyProjectComponent>(MockBehavior.Loose).Object;
-
-            var jsonReport = JsonReport.Build(options, readonlyInputComponent, It.IsAny<TestProjectsInfo>());
-
-            var expectedGetUri = new Uri($"https://www.filestoragelocation.com/StrykerOutput/{projectName}/{projectVersion}/stryker-report.json?sv=AZURE_SAS_KEY");
-
-            var expectedCreateOutputDirectoryUri = new Uri($"https://www.filestoragelocation.com/StrykerOutput/?sv=AZURE_SAS_KEY&restype=directory");
-            var expectedCreateProjectOutputDirectoryUri = new Uri($"https://www.filestoragelocation.com/StrykerOutput/{projectName}/?sv=AZURE_SAS_KEY&restype=directory");
-            var expectedCreateBaselinesDirectoryUri = new Uri($"https://www.filestoragelocation.com/StrykerOutput/{projectName}/baseline/?sv=AZURE_SAS_KEY&restype=directory");
-            var expectedCreateVersionDirectoryUri = new Uri($"https://www.filestoragelocation.com/StrykerOutput/{projectName}/{projectVersion}/?sv=AZURE_SAS_KEY&restype=directory");
-
-            var expectedFileAllocationUri = new Uri($"https://www.filestoragelocation.com/StrykerOutput/{projectName}/{projectVersion}/stryker-report.json?sv=AZURE_SAS_KEY");
-
-            var expectedUploadContentUri = new Uri($"https://www.filestoragelocation.com/StrykerOutput/{projectName}/{projectVersion}/stryker-report.json?sv=AZURE_SAS_KEY&comp=range");
-
-            handlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(requestMessage => requestMessage.RequestUri == expectedGetUri && requestMessage.Method == HttpMethod.Get),
-                ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(() => new HttpResponseMessage()
-                {
-                    StatusCode = System.Net.HttpStatusCode.NotFound,
-                    Content = new StringContent(jsonReport.ToJson(), Encoding.UTF8, "application/json")
-                })
-                .Verifiable();
-
-            handlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(requestMessage => requestMessage.RequestUri == expectedCreateOutputDirectoryUri && requestMessage.Method == HttpMethod.Put),
-                ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage()
-                {
-                    StatusCode = System.Net.HttpStatusCode.Created
-                })
-                .Verifiable();
-            handlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(requestMessage => requestMessage.RequestUri == expectedCreateProjectOutputDirectoryUri && requestMessage.Method == HttpMethod.Put),
-                ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage()
-                {
-                    StatusCode = System.Net.HttpStatusCode.Created
-                })
-                .Verifiable();
-            handlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(requestMessage => requestMessage.RequestUri == expectedCreateBaselinesDirectoryUri && requestMessage.Method == HttpMethod.Put),
-                ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage()
-                {
-                    StatusCode = System.Net.HttpStatusCode.Created
-                })
-                .Verifiable();
-            handlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(requestMessage => requestMessage.RequestUri == expectedCreateVersionDirectoryUri && requestMessage.Method == HttpMethod.Put),
-                ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage()
-                {
-                    StatusCode = System.Net.HttpStatusCode.Created
-                })
-                .Verifiable();
-
-            handlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(requestMessage => requestMessage.RequestUri == expectedFileAllocationUri && requestMessage.Method == HttpMethod.Put),
-                ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage()
-                {
-                    StatusCode = System.Net.HttpStatusCode.Created
-                })
-                .Verifiable();
-
-            handlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(requestMessage => requestMessage.RequestUri == expectedUploadContentUri && requestMessage.Method == HttpMethod.Put),
-                ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage()
-                {
-                    StatusCode = System.Net.HttpStatusCode.Created,
-                    Content = new StringContent("File created")
-                })
-                .Verifiable();
-
-            var target = new AzureFileShareBaselineProvider(options, new HttpClient(handlerMock.Object));
-
-            await target.Save(jsonReport, projectVersion);
-
-            // assert
-            handlerMock.VerifyAll();
-        }
-
-        [Theory]
-        [InlineData("baseline/2.0.0")]
-        [InlineData("baseline/2.0.0-beta001")]
-        [InlineData("baseline/master")]
-        [InlineData("baseline/project_version")]
-        public async Task Save_Calls_CreateDictionary_And_AllocateFileLocation_When_Baseline_Does_Not_Exists(string version)
-        {
-            // arrange
-            var options = new StrykerOptions()
-            {
-                AzureFileStorageUrl = "https://www.filestoragelocation.com",
-                AzureFileStorageSas = "sv=AZURE_SAS_KEY",
-                BaselineProvider = BaselineProvider.AzureFileStorage
-            };
-            var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
-
-            var readonlyInputComponent = new Mock<IReadOnlyProjectComponent>(MockBehavior.Loose).Object;
-
-            var jsonReport = JsonReport.Build(options, readonlyInputComponent, It.IsAny<TestProjectsInfo>());
-
-            var expectedGetUri = new Uri($"https://www.filestoragelocation.com/StrykerOutput/{version}/stryker-report.json?sv=AZURE_SAS_KEY");
-
-            var expectedCreateStrykerOutputDirectoryUri = new Uri("https://www.filestoragelocation.com/StrykerOutput/?sv=AZURE_SAS_KEY&restype=directory");
-            var expectedCreateBaselinesDirectoryUri = new Uri("https://www.filestoragelocation.com/StrykerOutput/baseline/?sv=AZURE_SAS_KEY&restype=directory");
-            var expectedCreateVersionDirectoryUri = new Uri($"https://www.filestoragelocation.com/StrykerOutput/{version}/?sv=AZURE_SAS_KEY&restype=directory");
-
-            var expectedFileAllocationUri = new Uri($"https://www.filestoragelocation.com/StrykerOutput/{version}/stryker-report.json?sv=AZURE_SAS_KEY");
-
-            var expectedUploadContentUri = new Uri($"https://www.filestoragelocation.com/StrykerOutput/{version}/stryker-report.json?sv=AZURE_SAS_KEY&comp=range");
-
-            handlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(requestMessage => requestMessage.RequestUri == expectedGetUri && requestMessage.Method == HttpMethod.Get),
-                ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage()
-                {
-                    StatusCode = System.Net.HttpStatusCode.NotFound,
-                    Content = new StringContent(jsonReport.ToJson(), Encoding.UTF8, "application/json")
-                })
-                .Verifiable();
-
-            handlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(requestMessage => requestMessage.RequestUri == expectedCreateStrykerOutputDirectoryUri && requestMessage.Method == HttpMethod.Put),
-                ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage()
-                {
-                    StatusCode = System.Net.HttpStatusCode.Created
-                })
-                .Verifiable();
-            handlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(requestMessage => requestMessage.RequestUri == expectedCreateBaselinesDirectoryUri && requestMessage.Method == HttpMethod.Put),
-                ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage()
-                {
-                    StatusCode = System.Net.HttpStatusCode.Created
-                })
-                .Verifiable();
-            handlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(requestMessage => requestMessage.RequestUri == expectedCreateVersionDirectoryUri && requestMessage.Method == HttpMethod.Put),
-                ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage()
-                {
-                    StatusCode = System.Net.HttpStatusCode.Created
-                })
-                .Verifiable();
-
-            handlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(requestMessage => requestMessage.RequestUri == expectedFileAllocationUri && requestMessage.Method == HttpMethod.Put),
-                ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage()
-                {
-                    StatusCode = System.Net.HttpStatusCode.Created
-                })
-                .Verifiable();
-
-            handlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(requestMessage => requestMessage.RequestUri == expectedUploadContentUri && requestMessage.Method == HttpMethod.Put),
-                ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage()
-                {
-                    StatusCode = System.Net.HttpStatusCode.Created,
-                    Content = new StringContent("File created")
-                })
-                .Verifiable();
-
-            var target = new AzureFileShareBaselineProvider(options, new HttpClient(handlerMock.Object));
-
-            await target.Save(jsonReport, version);
-
-            // assert
-            handlerMock
-               .Protected()
-               .Verify(
-                "SendAsync",
-                Times.Exactly(1),
-                ItExpr.Is<HttpRequestMessage>(req =>
-                   req.Method == HttpMethod.Get
-                   && req.RequestUri == expectedGetUri),
-                ItExpr.IsAny<CancellationToken>());
-
-            handlerMock
-               .Protected()
-               .Verify(
-                "SendAsync",
-                Times.Exactly(1),
-                ItExpr.Is<HttpRequestMessage>(req =>
-                   req.Method == HttpMethod.Put
-                   && req.RequestUri == expectedCreateStrykerOutputDirectoryUri),
-                ItExpr.IsAny<CancellationToken>());
-            handlerMock
-               .Protected()
-               .Verify(
-                "SendAsync",
-                Times.Exactly(1),
-                ItExpr.Is<HttpRequestMessage>(req =>
-                   req.Method == HttpMethod.Put
-                   && req.RequestUri == expectedCreateBaselinesDirectoryUri),
-                ItExpr.IsAny<CancellationToken>());
-            handlerMock
-               .Protected()
-               .Verify(
-                "SendAsync",
-                Times.Exactly(1),
-                ItExpr.Is<HttpRequestMessage>(req =>
-                   req.Method == HttpMethod.Put
-                   && req.RequestUri == expectedCreateVersionDirectoryUri),
-                ItExpr.IsAny<CancellationToken>());
-
-            handlerMock
-              .Protected()
-              .Verify(
-               "SendAsync",
-               Times.Exactly(1),
-               ItExpr.Is<HttpRequestMessage>(req =>
-                  req.Method == HttpMethod.Put
-                  && req.RequestUri == expectedFileAllocationUri
-                  && req.Headers.Contains("x-ms-type")),
-                ItExpr.IsAny<CancellationToken>());
-
-            handlerMock
-              .Protected()
-              .Verify(
-               "SendAsync",
-               Times.Exactly(1),
-               ItExpr.Is<HttpRequestMessage>(req =>
-                  req.Method == HttpMethod.Put
-                  && req.RequestUri == expectedUploadContentUri),
-                ItExpr.IsAny<CancellationToken>());
-        }
+        Mock.Get(fileClient).VerifyAll();
+        Mock.Get(fileClient).VerifyNoOtherCalls();
     }
 }

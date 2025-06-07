@@ -1,85 +1,86 @@
+using System.Collections.Generic;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Shouldly;
+using Stryker.Abstractions;
 using Stryker.Core.Mutators;
-using System.Collections.Generic;
-using Xunit;
 
-namespace Stryker.Core.UnitTest.Mutators
+namespace Stryker.Core.UnitTest.Mutators;
+
+[TestClass]
+public class InitializerMutatorTests : TestBase
 {
-    public class InitializerMutatorTests : TestBase
+    [TestMethod]
+    public void ShouldBeMutationLevelStandard()
     {
-        [Fact]
-        public void ShouldBeMutationLevelStandard()
-        {
-            var target = new InitializerMutator();
-            target.MutationLevel.ShouldBe(MutationLevel.Standard);
-        }
+        var target = new InitializerMutator();
+        target.MutationLevel.ShouldBe(MutationLevel.Standard);
+    }
 
-        [Fact]
-        public void ShouldRemoveValuesFromArrayInitializer()
-        {
-            var initializerExpression = SyntaxFactory.InitializerExpression(SyntaxKind.ArrayInitializerExpression,
-                SyntaxFactory.SeparatedList(new List<ExpressionSyntax> {
-                    SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(5))
-                }));
-            var target = new InitializerMutator();
+    [TestMethod]
+    public void ShouldRemoveValuesFromArrayInitializer()
+    {
+        var initializerExpression = SyntaxFactory.InitializerExpression(SyntaxKind.ArrayInitializerExpression,
+            SyntaxFactory.SeparatedList(new List<ExpressionSyntax> {
+                SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(5))
+            }));
+        var target = new InitializerMutator();
 
-            var result = target.ApplyMutations(initializerExpression);
+        var result = target.ApplyMutations(initializerExpression, null);
 
-            var mutation = result.ShouldHaveSingleItem();
-            mutation.DisplayName.ShouldBe("Array initializer mutation");
+        var mutation = result.ShouldHaveSingleItem();
+        mutation.DisplayName.ShouldBe("Array initializer mutation");
 
-            var replacement = mutation.ReplacementNode.ShouldBeOfType<InitializerExpressionSyntax>();
-            replacement.Expressions.ShouldBeEmpty();
-        }
+        var replacement = mutation.ReplacementNode.ShouldBeOfType<InitializerExpressionSyntax>();
+        replacement.Expressions.ShouldBeEmpty();
+    }
 
-        [Fact]
-        public void ShouldNotMutateEmptyInitializer()
-        {
-            var emptyInitializerExpression = SyntaxFactory.InitializerExpression(SyntaxKind.ArrayInitializerExpression,
-                SyntaxFactory.SeparatedList<ExpressionSyntax>());
-            var target = new InitializerMutator();
+    [TestMethod]
+    public void ShouldNotMutateEmptyInitializer()
+    {
+        var emptyInitializerExpression = SyntaxFactory.InitializerExpression(SyntaxKind.ArrayInitializerExpression,
+            SyntaxFactory.SeparatedList<ExpressionSyntax>());
+        var target = new InitializerMutator();
 
-            var result = target.ApplyMutations(emptyInitializerExpression);
+        var result = target.ApplyMutations(emptyInitializerExpression, null);
 
-            result.ShouldBeEmpty();
-        }
+        result.ShouldBeEmpty();
+    }
 
-        [Fact]
-        public void ShouldNotMutateStackallocArrayCreationExpressionSyntax()
-        {
-            var arrayCreationExpression = SyntaxFactory.ParseExpression("stackalloc int[] { 0 }") as StackAllocArrayCreationExpressionSyntax;
+    [TestMethod]
+    public void ShouldNotMutateStackallocArrayCreationExpressionSyntax()
+    {
+        var arrayCreationExpression = SyntaxFactory.ParseExpression("stackalloc int[] { 0 }") as StackAllocArrayCreationExpressionSyntax;
 
-            var target = new InitializerMutator();
+        var target = new InitializerMutator();
 
-            var result = target.ApplyMutations(arrayCreationExpression.Initializer);
+        var result = target.ApplyMutations(arrayCreationExpression.Initializer, null);
 
-            result.ShouldBeEmpty();
-        }
+        result.ShouldBeEmpty();
+    }
 
-        [Fact]
-        public void ShouldNotMutateArrayCreationExpressionSyntax()
-        {
-            var arrayCreationExpression = SyntaxFactory.ParseExpression("new int[] { 0 }") as ArrayCreationExpressionSyntax;
+    [TestMethod]
+    public void ShouldNotMutateArrayCreationExpressionSyntax()
+    {
+        var arrayCreationExpression = SyntaxFactory.ParseExpression("new int[] { 0 }") as ArrayCreationExpressionSyntax;
 
-            var target = new InitializerMutator();
+        var target = new InitializerMutator();
 
-            var result = target.ApplyMutations(arrayCreationExpression.Initializer);
+        var result = target.ApplyMutations(arrayCreationExpression.Initializer, null);
 
-            result.ShouldBeEmpty();
-        }
+        result.ShouldBeEmpty();
+    }
 
-        [Fact]
-        public void ShouldNotMutateImplicitArrayCreationExpressionSyntax()
-        {
-            var arrayCreationExpression = SyntaxFactory.ParseExpression("new [] { 0 }") as ImplicitArrayCreationExpressionSyntax;
+    [TestMethod]
+    public void ShouldNotMutateImplicitArrayCreationExpressionSyntax()
+    {
+        var arrayCreationExpression = SyntaxFactory.ParseExpression("new [] { 0 }") as ImplicitArrayCreationExpressionSyntax;
 
-            var target = new InitializerMutator();
+        var target = new InitializerMutator();
 
-            var result = target.ApplyMutations(arrayCreationExpression.Initializer);
+        var result = target.ApplyMutations(arrayCreationExpression.Initializer, null);
 
-            result.ShouldBeEmpty();
-        }
+        result.ShouldBeEmpty();
     }
 }

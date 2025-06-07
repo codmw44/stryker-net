@@ -1,28 +1,29 @@
+using System;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Shouldly;
+using Stryker.Abstractions;
 using Stryker.Core.MutantFilters;
 using Stryker.Core.Mutants;
-using Stryker.Core.Options;
-using System;
-using Xunit;
 
-namespace Stryker.Core.UnitTest.MutantFilters
+namespace Stryker.Core.UnitTest.MutantFilters;
+
+[TestClass]
+public class ExcludeFromCodeCoverageFilterTests : TestBase
 {
-    public class ExcludeFromCodeCoverageFilterTests : TestBase
+    [TestMethod]
+    public void ShouldHaveName()
     {
-        [Fact]
-        public void ShouldHaveName()
-        {
-            var target = new ExcludeFromCodeCoverageFilter() as IMutantFilter;
-            target.DisplayName.ShouldBe("exclude from code coverage filter");
-        }
+        var target = new ExcludeFromCodeCoverageFilter() as IMutantFilter;
+        target.DisplayName.ShouldBe("exclude from code coverage filter");
+    }
 
-        [Fact]
-        public void OnMethod()
-        {
-            // Arrange
-            var mutant = Create(@"
+    [TestMethod]
+    public void OnMethod()
+    {
+        // Arrange
+        var mutant = Create(@"
 public class IgnoredMethodMutantFilter_NestedMethodCalls
 {
     [ExcludeFromCodeCoverage]
@@ -32,40 +33,40 @@ public class IgnoredMethodMutantFilter_NestedMethodCalls
     }
 }", "<");
 
-            var sut = new ExcludeFromCodeCoverageFilter() as IMutantFilter;
+        var sut = new ExcludeFromCodeCoverageFilter() as IMutantFilter;
 
-            // Act
-            var results = sut.FilterMutants(new[] { mutant }, null, new StrykerOptions());
+        // Act
+        var results = sut.FilterMutants(new[] { mutant }, null, new StrykerOptions());
 
-            // Assert
-            results.ShouldNotContain(mutant);
-        }
+        // Assert
+        results.ShouldNotContain(mutant);
+    }
 
-        [Fact]
-        public void OnProperty()
-        {
-            // Arrange
-            var mutant = Create(@"
+    [TestMethod]
+    public void OnProperty()
+    {
+        // Arrange
+        var mutant = Create(@"
 public class IgnoredMethodMutantFilter_NestedMethodCalls
 {
     [ExcludeFromCodeCoverage]
     private string TestProperty => ""something""
 }", "something");
 
-            var sut = new ExcludeFromCodeCoverageFilter() as IMutantFilter;
+        var sut = new ExcludeFromCodeCoverageFilter() as IMutantFilter;
 
-            // Act
-            var results = sut.FilterMutants(new[] { mutant }, null, new StrykerOptions());
+        // Act
+        var results = sut.FilterMutants(new[] { mutant }, null, new StrykerOptions());
 
-            // Assert
-            results.ShouldNotContain(mutant);
-        }
+        // Assert
+        results.ShouldNotContain(mutant);
+    }
 
-        [Fact]
-        public void OnClass()
-        {
-            // Arrange
-            var mutant = Create(@"
+    [TestMethod]
+    public void OnClass()
+    {
+        // Arrange
+        var mutant = Create(@"
 [ExcludeFromCodeCoverage(""sowhat"")]
 public class IgnoredMethodMutantFilter_NestedMethodCalls
 {
@@ -75,20 +76,20 @@ public class IgnoredMethodMutantFilter_NestedMethodCalls
     }
 }", "<");
 
-            var sut = new ExcludeFromCodeCoverageFilter();
+        var sut = new ExcludeFromCodeCoverageFilter();
 
-            // Act
-            var results = sut.FilterMutants(new[] { mutant }, null, new StrykerOptions());
+        // Act
+        var results = sut.FilterMutants(new[] { mutant }, null, new StrykerOptions());
 
-            // Assert
-            results.ShouldNotContain(mutant);
-        }
+        // Assert
+        results.ShouldNotContain(mutant);
+    }
 
-        [Fact]
-        public void Not()
-        {
-            // Arrange
-            var mutant = Create(@"
+    [TestMethod]
+    public void Not()
+    {
+        // Arrange
+        var mutant = Create(@"
 public class IgnoredMethodMutantFilter_NestedMethodCalls
 {
     private void TestMethod()
@@ -97,23 +98,23 @@ public class IgnoredMethodMutantFilter_NestedMethodCalls
     }
 }", "<");
 
-            var sut = new ExcludeFromCodeCoverageFilter();
+        var sut = new ExcludeFromCodeCoverageFilter();
 
-            // Act
-            var results = sut.FilterMutants(new[] { mutant }, null, new StrykerOptions());
+        // Act
+        var results = sut.FilterMutants(new[] { mutant }, null, new StrykerOptions());
 
-            // Assert
-            results.ShouldContain(mutant);
-        }
+        // Assert
+        results.ShouldContain(mutant);
+    }
 
-        [Theory]
-        [InlineData("System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute")]
-        [InlineData("ExcludeFromCodeCoverageAttribute")]
-        [InlineData("ExcludeFromCodeCoverage")]
-        public void Writings(string attr)
-        {
-            // Arrange
-            var mutant = Create($@"
+    [TestMethod]
+    [DataRow("System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute")]
+    [DataRow("ExcludeFromCodeCoverageAttribute")]
+    [DataRow("ExcludeFromCodeCoverage")]
+    public void Writings(string attr)
+    {
+        // Arrange
+        var mutant = Create($@"
 public class IgnoredMethodMutantFilter_NestedMethodCalls
 {{
     [{attr}]
@@ -123,30 +124,29 @@ public class IgnoredMethodMutantFilter_NestedMethodCalls
     }}
 }}", "<");
 
-            var sut = new ExcludeFromCodeCoverageFilter();
+        var sut = new ExcludeFromCodeCoverageFilter();
 
-            // Act
-            var results = sut.FilterMutants(new[] { mutant }, null, new StrykerOptions());
+        // Act
+        var results = sut.FilterMutants(new[] { mutant }, null, new StrykerOptions());
 
-            // Assert
-            results.ShouldNotContain(mutant);
-        }
+        // Assert
+        results.ShouldNotContain(mutant);
+    }
 
 
-        private Mutant Create(string source, string search)
+    private Mutant Create(string source, string search)
+    {
+        var baseSyntaxTree = CSharpSyntaxTree.ParseText(source).GetRoot();
+        var originalNode =
+            baseSyntaxTree.FindNode(new TextSpan(source.IndexOf(search, StringComparison.OrdinalIgnoreCase), 5));
+
+        var mutant = new Mutant
         {
-            var baseSyntaxTree = CSharpSyntaxTree.ParseText(source).GetRoot();
-            var originalNode =
-                baseSyntaxTree.FindNode(new TextSpan(source.IndexOf(search, StringComparison.OrdinalIgnoreCase), 5));
-
-            var mutant = new Mutant
+            Mutation = new Mutation
             {
-                Mutation = new Mutation
-                {
-                    OriginalNode = originalNode,
-                }
-            };
-            return mutant;
-        }
+                OriginalNode = originalNode,
+            }
+        };
+        return mutant;
     }
 }

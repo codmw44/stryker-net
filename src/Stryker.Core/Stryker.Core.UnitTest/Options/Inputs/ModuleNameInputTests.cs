@@ -1,47 +1,48 @@
 using Shouldly;
-using Stryker.Core.Exceptions;
-using Stryker.Core.Options.Inputs;
-using Xunit;
+using Stryker.Abstractions.Exceptions;
+using Stryker.Abstractions.Options.Inputs;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Stryker.Core.UnitTest;
 
-namespace Stryker.Core.UnitTest.Options.Inputs
+namespace Stryker.Core.UnitTest.Options.Inputs;
+
+[TestClass]
+public class ModuleNameInputTests : TestBase
 {
-    public class ModuleNameInputTests : TestBase
+    [TestMethod]
+    public void ShouldHaveHelpText()
     {
-        [Fact]
-        public void ShouldHaveHelpText()
-        {
-            var target = new ModuleNameInput();
-            target.HelpText.ShouldBe(@"Module name used by reporters. Usually a project in your solution would be a module. | default: ''");
-        }
+        var target = new ModuleNameInput();
+        target.HelpText.ShouldBe(@"Module name used by reporters. Usually a project in your solution would be a module. | default: ''");
+    }
 
-        [Fact]
-        public void ShouldHaveDefault()
-        {
-            var target = new ModuleNameInput { SuppliedInput = null };
+    [TestMethod]
+    public void ShouldHaveDefault()
+    {
+        var target = new ModuleNameInput { SuppliedInput = null };
 
-            var result = target.Validate();
+        var result = target.Validate();
 
-            result.ShouldBe(string.Empty);
-        }
+        result.ShouldBe(string.Empty);
+    }
 
-        [Fact]
-        public void ShouldReturnName()
-        {
-            var target = new ModuleNameInput { SuppliedInput = "TestName" };
+    [TestMethod]
+    public void ShouldReturnName()
+    {
+        var target = new ModuleNameInput { SuppliedInput = "TestName" };
 
-            var result = target.Validate();
+        var result = target.Validate();
 
-            result.ShouldBe("TestName");
-        }
+        result.ShouldBe("TestName");
+    }
 
-        [Fact]
-        public void ShouldThrowOnNull()
-        {
-            var target = new ModuleNameInput { SuppliedInput = string.Empty };
+    [TestMethod]
+    public void ShouldThrowOnNull()
+    {
+        var target = new ModuleNameInput { SuppliedInput = string.Empty };
 
-            var exception = Should.Throw<InputException>(() => target.Validate());
+        var exception = Should.Throw<InputException>(() => target.Validate());
 
-            exception.Message.ShouldBe("Module name cannot be empty. Either fill the option or leave it out.");
-        }
+        exception.Message.ShouldBe("Module name cannot be empty. Either fill the option or leave it out.");
     }
 }

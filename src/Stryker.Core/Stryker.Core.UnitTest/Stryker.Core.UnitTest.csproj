@@ -13,9 +13,6 @@
     <None Remove="TestResources\StrongNameKeyFile.snk" />
   </ItemGroup>
   <ItemGroup>
-    <None Remove="TestResources\FsharpExampleSourceFile.fs" />
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="TestResources\ExampleTestFilePreprocessorSymbols.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -35,33 +32,26 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="TestResources\FsharpExampleSourceFile.fs">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="coverlet.collector">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="coverlet.msbuild">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
     <PackageReference Include="LaunchDarkly.EventSource" />
+    <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Moq" />
+    <PackageReference Include="MSTest" />
     <PackageReference Include="Shouldly" />
     <PackageReference Include="Spectre.Console.Testing" />
     <PackageReference Include="TestableIO.System.IO.Abstractions.TestingHelpers" />
-    <PackageReference Include="xunit" />
-    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
-    <PackageReference Include="Xunit.SkippableFact" />
   </ItemGroup>
+
+  <!--This avoids conflict with System.Text.RegularExpression-->
   <ItemGroup>
+    <PackageReference Include="Stryker.Regex.Parser">
+      <Aliases>StrykerRegexParser</Aliases>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Stryker.Abstractions\Stryker.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Stryker.Utilities\Stryker.Utilities.csproj" />
     <ProjectReference Include="..\Stryker.Core\Stryker.Core.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

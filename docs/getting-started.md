@@ -9,20 +9,20 @@ custom_edit_url: https://github.com/stryker-mutator/stryker-net/edit/master/docs
 
 Stryker is installed using the dotnet cli as a [dotnet tool](https://docs.microsoft.com/en-us/dotnet/core/tools/global-tools)
 
-Stryker requires the dotnet 6.0 runtime or newer: [Install dotnet](https://dotnet.microsoft.com/download)
+Stryker requires the dotnet 8 runtime or newer: [Install dotnet](https://dotnet.microsoft.com/download)
 
-\* Note: Your application does not need to target dotnet 6.0 or newer. You only need the runtime installed so stryker can run.
+\* Note: Your application does not need to target dotnet 8 or newer. You only need the runtime installed so stryker can run.
 
 ## Dotnet framework specific
 Nuget is required for dotnet framework. Follow the instructions at [Install nuget](https://docs.microsoft.com/en-us/nuget/install-nuget-client-tools#windows) including adding nuget to the path. Otherwise stryker will not be able to find and use nuget.
 
 Make sure NuGet targets and build tasks are installed. You can install them with visual studio by going to Tools > Get Tools and Features > Individual components > Code tools
 
-[NuGet targets and build tasks feature](./images/install-nuget-targets.png)
+![NuGet targets and build tasks feature](./images/install-nuget-targets.png)
 
 ## Migrating
 
-Coming from Stryker.NET V0.x? Take a look at our [migration guide](https://stryker-mutator.io/docs/stryker-net/migration-guide).
+Coming from an older version of Stryker.NET? Take a look at our [migration guide](./migration-guide.md).
 
 # Install stryker
 
@@ -85,7 +85,7 @@ Do this by adding a `stryker-config.json` file to your run location. Now add you
 }
 ```
 
-For all available configuration see [our configuration page](https://stryker-mutator.io/docs/stryker-net/Configuration).
+For all available configuration see [our configuration page](./configuration.md).
 
 # Troubleshooting
 Have troubles running Stryker? Try running with trace logging.
@@ -94,4 +94,4 @@ Have troubles running Stryker? Try running with trace logging.
 dotnet stryker --verbosity trace --log-to-file
 ```
 
-Please [report any issues](http://github.com/stryker-mutator/stryker-net/issues) you have or let us know [via Slack](https://join.slack.com/t/stryker-mutator/shared_invite/enQtOTUyMTYyNTg1NDQ0LTU4ODNmZDlmN2I3MmEyMTVhYjZlYmJkOThlNTY3NTM1M2QxYmM5YTM3ODQxYmJjY2YyYzllM2RkMmM1NjNjZjM).
+Please [report any issues](https://github.com/stryker-mutator/stryker-net/issues) you have or let us know [via Slack](https://join.slack.com/t/stryker-mutator/shared_invite/enQtOTUyMTYyNTg1NDQ0LTU4ODNmZDlmN2I3MmEyMTVhYjZlYmJkOThlNTY3NTM1M2QxYmM5YTM3ODQxYmJjY2YyYzllM2RkMmM1NjNjZjM).

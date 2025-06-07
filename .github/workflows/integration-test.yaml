@@ -1,0 +1,18 @@
+name: integration test macos m1
+run-name: e2e ${{ github.head_ref }} on m1 macos
+
+on: [pull_request]
+
+jobs:
+  integration-test:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.x
+            9.x
+      - name: Run integration tests
+        shell: pwsh
+        run: .\integration-tests.ps1

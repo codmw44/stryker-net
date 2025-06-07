@@ -1,8 +1,7 @@
-﻿namespace Stryker.Core.Compiling
-{
-    public class CompilingProcessResult
-    {
-        public bool Success { get; set; }
-        public RollbackProcessResult RollbackResult { get; set; }
-    }
-}
+using System.Collections.Generic;
+
+namespace Stryker.Core.Compiling;
+
+public record CompilingProcessResult(
+    bool Success,
+    IEnumerable<int> RollbackedIds);

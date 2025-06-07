@@ -4,11 +4,11 @@ using System.IO.Abstractions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
-using Stryker.Core.InjectedHelpers;
-using Stryker.Core.Logging;
-using Stryker.Core.Options;
-using Stryker.Core.Testing;
+using Stryker.Abstractions;
+using Stryker.Abstractions.Options;
+using Stryker.Core.Helpers.ProcessUtil;
 using Stryker.Core.TestRunners.UnityTestRunner.RunUnity.UnityPath;
+using Stryker.Utilities.Logging;
 
 namespace Stryker.Core.TestRunners.UnityTestRunner.RunUnity;
 
@@ -50,7 +50,7 @@ public class RunUnity : IRunUnity
     }
 
 
-    public void ReloadDomain(StrykerOptions strykerOptions, string projectPath, string additionalArgumentsForCli = null)
+    public void ReloadDomain(IStrykerOptions strykerOptions, string projectPath, string additionalArgumentsForCli = null)
     {
         _logger.LogDebug("Request to reload domain");
 
@@ -60,7 +60,7 @@ public class RunUnity : IRunUnity
         ThrowExceptionIfExists();
     }
 
-    public XDocument RunTests(StrykerOptions strykerOptions, string projectPath,
+    public XDocument RunTests(IStrykerOptions strykerOptions, string projectPath,
         string additionalArgumentsForCli = null, string helperNamespace = null, string activeMutantId = null)
     {
         _logger.LogDebug("Request to run tests Unity");
@@ -101,7 +101,7 @@ public class RunUnity : IRunUnity
     }
 
 
-    private void TryOpenUnity(StrykerOptions strykerOptions, string projectPath,
+    private void TryOpenUnity(IStrykerOptions strykerOptions, string projectPath,
         string additionalArgumentsForCli = null)
     {
         ThrowExceptionIfExists();
@@ -122,7 +122,7 @@ public class RunUnity : IRunUnity
         OpenUnity(strykerOptions, projectPath, additionalArgumentsForCli);
     }
 
-    private void OpenUnity(StrykerOptions strykerOptions, string projectPath, string additionalArgumentsForCli = null)
+    private void OpenUnity(IStrykerOptions strykerOptions, string projectPath, string additionalArgumentsForCli = null)
     {
         _logger.LogDebug("OpenUnity started");
 

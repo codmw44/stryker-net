@@ -1,12 +1,13 @@
 using System.IO;
 using System.Linq;
-using Stryker.Core.Options;
+using Stryker.Abstractions;
+using Stryker.Abstractions.Options;
 
 namespace Stryker.Core.Initialisation;
 
 public static class UnityStrykerOptionsExtension
 {
-    public static bool IsUnityProject(this StrykerOptions options)
+    public static bool IsUnityProject(this IStrykerOptions options)
     {
         if (options == null)
             return false;
@@ -26,7 +27,7 @@ public static class UnityStrykerOptionsExtension
         return containsUnityEngineReferences;
     }
 
-    public static string GetUnityProjectDirectory(this StrykerOptions options)
+    public static string GetUnityProjectDirectory(this IStrykerOptions options)
     {
         if (options == null)
             return null;

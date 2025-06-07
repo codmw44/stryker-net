@@ -1,36 +1,25 @@
-using Microsoft.Extensions.Logging;
-using Stryker.Core.Logging;
+using System;
+using Stryker.Abstractions;
 
-namespace Stryker.Core.Initialisation
+namespace Stryker.Core.Initialisation;
+
+public class TimeoutValueCalculator : ITimeoutValueCalculator
 {
-    public interface ITimeoutValueCalculator
+    private readonly int _extraMs;
+    private readonly int _initializationTime;
+    private readonly int _aggregatedTestTimes;
+    private const double Ratio = 1.5;
+
+    public TimeoutValueCalculator(int extraMs) => _extraMs = extraMs;
+
+    public TimeoutValueCalculator(int extraMs, int testSessionTime, int aggregatedTestTimes)
     {
-        int CalculateTimeoutValue(int initialTestrunDurationMS);
-        int DefaultTimeout { get; }
+        _extraMs = extraMs;
+        _initializationTime = Math.Max(testSessionTime - aggregatedTestTimes, 0);
+        _aggregatedTestTimes = aggregatedTestTimes;
     }
 
-    public class TimeoutValueCalculator : ITimeoutValueCalculator
-    {
-        private readonly int _extraMs;
-        private readonly int _initTimeMs;
-        private readonly int _totalTestTime;
-        private const double Ratio = 1.5;
+    public int DefaultTimeout => CalculateTimeoutValue(_aggregatedTestTimes);
 
-        public TimeoutValueCalculator(int extraMS)
-        {
-            _extraMs = extraMS;
-        }
-
-        public TimeoutValueCalculator(int extraMs, int initTimeMs, int totalTestTime)
-        {
-            _extraMs = extraMs;
-            _initTimeMs = initTimeMs;
-            _totalTestTime = totalTestTime;
-        }
-        
-        public int DefaultTimeout => Compute(_totalTestTime);
-
-        private int Compute(int time) => (int)(time * Ratio) + _extraMs;
-        public int CalculateTimeoutValue(int initialTestrunDurationMS) => Compute(_initTimeMs + initialTestrunDurationMS);
-    }
+    public int CalculateTimeoutValue(int estimatedTime) => (int)((_initializationTime + estimatedTime) * Ratio) + _extraMs;
 }

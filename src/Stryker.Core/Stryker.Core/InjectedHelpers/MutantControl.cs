@@ -5,12 +5,13 @@ using System.Text;
 
 namespace Stryker
 {
-    internal static class MutantControl
+
+    public static class MutantControl
     {
-        private static List<int> _coveredMutants;
-        private static List<int> _coveredStaticdMutants;
-        private static string envName;
-        private static Object _coverageLock = new Object();
+        private static System.Collections.Generic.List<int> _coveredMutants = new System.Collections.Generic.List<int>();
+        private static System.Collections.Generic.List<int> _coveredStaticMutants = new System.Collections.Generic.List<int>();
+        private static string envName = string.Empty;
+        private static System.Object _coverageLock = new System.Object();
 
         // this attribute will be set by the Stryker Data Collector before each test
         public static bool CaptureCoverage;
@@ -18,11 +19,6 @@ namespace Stryker
         public static int Previous = -2;
         public const int ActiveMutantNotInitValue = -2;
         private static string _pathToListenActiveMutation = "";
-
-        static MutantControl()
-        {
-            InitCoverage();
-        }
 
         public static void InitCoverage()
         {
@@ -33,21 +29,21 @@ namespace Stryker
         public static void ResetCoverage()
         {
             _pathToListenActiveMutation = "";
-            _coveredMutants = new List<int>();
-            _coveredStaticdMutants = new List<int>();
+            _coveredMutants = new System.Collections.Generic.List<int>();
+            _coveredStaticMutants = new System.Collections.Generic.List<int>();
         }
 
-        public static IList<int>[] GetCoverageData()
+        public static System.Collections.Generic.IList<int>[] GetCoverageData()
         {
-            IList<int>[] result = new IList<int>[]{_coveredMutants, _coveredStaticdMutants};
+            System.Collections.Generic.IList<int>[] result = new System.Collections.Generic.IList<int>[] { _coveredMutants, _coveredStaticMutants };
             ResetCoverage();
             return result;
         }
 
-        private static void CurrentDomain_ProcessExit(object sender, EventArgs e)
+        private static void CurrentDomain_ProcessExit(object sender, System.EventArgs e)
         {
-            GC.KeepAlive(_coveredMutants);
-            GC.KeepAlive(_coveredStaticdMutants);
+            System.GC.KeepAlive(_coveredMutants);
+            System.GC.KeepAlive(_coveredStaticMutants);
         }
 
         // check with: Stryker.MutantControl.IsActive(ID)
@@ -64,11 +60,31 @@ namespace Stryker
 
             if (ActiveMutant != Previous)
             {
+#pragma warning disable CS8600
+                // get the environment variable storing the mutation id
+                string environmentVariableName = System.Environment.GetEnvironmentVariable("STRYKER_MUTANT_ID_CONTROL_VAR");
+                if (environmentVariableName != null)
+                {
+                    string environmentVariable = System.Environment.GetEnvironmentVariable(environmentVariableName);
+                    if (string.IsNullOrEmpty(environmentVariable))
+                    {
+                        ActiveMutant = -1;
+                    }
+                    else
+                    {
+                        ActiveMutant = int.Parse(environmentVariable);
+                    }
+                }
+                else
+                {
+                    ActiveMutant = -1;
+                }
 #if UNITY_EDITOR
                 UnityEngine.Debug.Log("[Stryker] ActiveMutation is " + int.Parse(File.ReadAllText(_pathToListenActiveMutation)));
 #endif
                 Previous = ActiveMutant;
             }
+
             return id == ActiveMutant;
         }
 
@@ -80,9 +96,9 @@ namespace Stryker
                 {
                     _coveredMutants.Add(id);
                 }
-                if (MutantContext.InStatic() && !_coveredStaticdMutants.Contains(id))
+                if (MutantContext.InStatic() && !_coveredStaticMutants.Contains(id))
                 {
-                    _coveredStaticdMutants.Add(id);
+                    _coveredStaticMutants.Add(id);
                 }
             }
         }

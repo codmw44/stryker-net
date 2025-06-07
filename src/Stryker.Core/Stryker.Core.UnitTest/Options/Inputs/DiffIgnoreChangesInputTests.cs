@@ -1,55 +1,56 @@
 using System.Linq;
 using Shouldly;
-using Stryker.Core.Options.Inputs;
-using Xunit;
+using Stryker.Abstractions.Options.Inputs;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Stryker.Core.UnitTest;
 
-namespace Stryker.Core.UnitTest.Options.Inputs
+namespace Stryker.Core.UnitTest.Options.Inputs;
+
+[TestClass]
+public class DiffIgnoreChangesInputTests : TestBase
 {
-    public class DiffIgnoreChangesInputTests : TestBase
+    [TestMethod]
+    public void ShouldHaveHelpText()
     {
-        [Fact]
-        public void ShouldHaveHelpText()
-        {
-            var target = new DiffIgnoreChangesInput();
-            target.HelpText.ShouldBe(@"Allows to specify an array of C# files which should be ignored if present in the diff.
+        var target = new DiffIgnoreChangesInput();
+        target.HelpText.ShouldBe(@"Allows to specify an array of C# files which should be ignored if present in the diff.
 Any non-excluded files will trigger all mutants to be tested because we cannot determine what mutants are affected by these files. 
 This feature is only recommended when you are sure these files will not affect results, or when you are prepared to sacrifice accuracy for performance.
 
 Use glob syntax for wildcards: https://en.wikipedia.org/wiki/Glob_(programming)
 Example: ['**/*Assets.json','**/favicon.ico'] | default: []");
-        }
+    }
 
-        [Fact]
-        public void ShouldAcceptGlob()
-        {
-            var target = new DiffIgnoreChangesInput { SuppliedInput = new[] { "*" } };
+    [TestMethod]
+    public void ShouldAcceptGlob()
+    {
+        var target = new DiffIgnoreChangesInput { SuppliedInput = new[] { "*" } };
 
-            var result = target.Validate();
+        var result = target.Validate();
 
-            result.ShouldHaveSingleItem().Glob.ToString().ShouldBe("*");
-        }
-        
-        [Fact]
-        public void ShouldParseAll()
-        {
-            var target = new DiffIgnoreChangesInput { SuppliedInput = new[] { "*", "MyFile.cs" } };
+        result.ShouldHaveSingleItem().Glob.ToString().ShouldBe("*");
+    }
 
-            var result = target.Validate();
+    [TestMethod]
+    public void ShouldParseAll()
+    {
+        var target = new DiffIgnoreChangesInput { SuppliedInput = new[] { "*", "MyFile.cs" } };
 
-            result.Count().ShouldBe(2);
+        var result = target.Validate();
 
-            result.First().Glob.ToString().ShouldBe("*");
-            result.Last().Glob.ToString().ShouldBe("MyFile.cs");
-        }
+        result.Count().ShouldBe(2);
 
-        [Fact]
-        public void ShouldHaveDefault()
-        {
-            var target = new DiffIgnoreChangesInput { SuppliedInput = null };
+        result.First().Glob.ToString().ShouldBe("*");
+        result.Last().Glob.ToString().ShouldBe("MyFile.cs");
+    }
 
-            var result = target.Validate();
+    [TestMethod]
+    public void ShouldHaveDefault()
+    {
+        var target = new DiffIgnoreChangesInput { SuppliedInput = null };
 
-            result.ShouldBeEmpty();
-        }
+        var result = target.Validate();
+
+        result.ShouldBeEmpty();
     }
 }

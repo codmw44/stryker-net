@@ -2,7 +2,7 @@ using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Stryker.Core.Options;
+using Stryker.Abstractions.Options;
 
 namespace Stryker.Core.TestRunners.UnityTestRunner.RunUnity.UnityPath;
 
@@ -15,7 +15,7 @@ public class UnityPath : IUnityPath
         _fileSystem = fileSystem;
     }
 
-    public string GetPath(StrykerOptions options)
+    public string GetPath(IStrykerOptions options)
     {
         if (!string.IsNullOrEmpty(options.PathToUnity))
         {

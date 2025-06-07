@@ -1,46 +1,47 @@
 using Shouldly;
-using Stryker.Core.Options.Inputs;
-using Xunit;
+using Stryker.Abstractions.Options.Inputs;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Stryker.Core.UnitTest;
 
-namespace Stryker.Core.UnitTest.Options.Inputs
+namespace Stryker.Core.UnitTest.Options.Inputs;
+
+[TestClass]
+public class WithBaselineInputTests : TestBase
 {
-    public class WithBaselineInputTests : TestBase
+    [TestMethod]
+    public void ShouldHaveHelpText()
     {
-        [Fact]
-        public void ShouldHaveHelpText()
-        {
-            var target = new WithBaselineInput();
-            target.HelpText.ShouldBe(@"EXPERIMENTAL: Use results stored in stryker dashboard to only test new mutants. | default: 'False'");
-        }
+        var target = new WithBaselineInput();
+        target.HelpText.ShouldBe(@"EXPERIMENTAL: Use results stored in stryker dashboard to only test new mutants. | default: 'False'");
+    }
 
-        [Fact]
-        public void ShouldBeEnabledWhenTrue()
-        {
-            var target = new WithBaselineInput { SuppliedInput = true };
+    [TestMethod]
+    public void ShouldBeEnabledWhenTrue()
+    {
+        var target = new WithBaselineInput { SuppliedInput = true };
 
-            var result = target.Validate();
+        var result = target.Validate();
 
-            result.ShouldBeTrue();
-        }
+        result.ShouldBeTrue();
+    }
 
-        [Fact]
-        public void ShouldProvideDefaultFalseWhenNull()
-        {
-            var target = new WithBaselineInput { SuppliedInput = null };
+    [TestMethod]
+    public void ShouldProvideDefaultFalseWhenNull()
+    {
+        var target = new WithBaselineInput { SuppliedInput = null };
 
-            var result = target.Validate();
+        var result = target.Validate();
 
-            result.ShouldBeFalse();
-        }
+        result.ShouldBeFalse();
+    }
 
-        [Fact]
-        public void ShouldNotBeEnabledWhenFalse()
-        {
-            var target = new WithBaselineInput { SuppliedInput = false };
+    [TestMethod]
+    public void ShouldNotBeEnabledWhenFalse()
+    {
+        var target = new WithBaselineInput { SuppliedInput = false };
 
-            var result = target.Validate();
+        var result = target.Validate();
 
-            result.ShouldBeFalse();
-        }
+        result.ShouldBeFalse();
     }
 }

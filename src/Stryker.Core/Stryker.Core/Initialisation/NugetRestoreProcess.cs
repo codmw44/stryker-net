@@ -2,78 +2,119 @@ using System;
 using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Stryker.Core.Exceptions;
-using Stryker.Core.Logging;
-using Stryker.Core.Testing;
-using Stryker.Core.ToolHelpers;
+using Stryker.Abstractions.Exceptions;
+using Stryker.Configuration;
+using Stryker.Core.Helpers;
+using Stryker.Core.Helpers.ProcessUtil;
+using Stryker.Utilities.Logging;
 
-namespace Stryker.Core.Initialisation
+namespace Stryker.Core.Initialisation;
+
+public interface INugetRestoreProcess
 {
-    public interface INugetRestoreProcess
+    void RestorePackages(string solutionPath, string msbuildPath = null);
+}
+
+/// <summary>
+/// Restores nuget packages for a given solution file
+/// </summary>
+public class NugetRestoreProcess : INugetRestoreProcess
+{
+    private IProcessExecutor ProcessExecutor { get; set; }
+    private readonly ILogger _logger;
+
+    public NugetRestoreProcess(IProcessExecutor processExecutor = null)
     {
-        void RestorePackages(string solutionPath, string msbuildPath = null);
+        ProcessExecutor = processExecutor ?? new ProcessExecutor();
+        _logger = ApplicationLogging.LoggerFactory.CreateLogger<NugetRestoreProcess>();
     }
 
-    /// <summary>
-    /// Restores nuget packages for a given solution file
-    /// </summary>
-    public class NugetRestoreProcess : INugetRestoreProcess
+    public void RestorePackages(string solutionPath, string msbuildPath = null)
     {
-        private IProcessExecutor _processExecutor { get; set; }
-        private ILogger _logger { get; set; }
-
-        public NugetRestoreProcess(IProcessExecutor processExecutor = null)
+        _logger.LogInformation("Restoring nuget packages using nuget.exe");
+        if (string.IsNullOrWhiteSpace(solutionPath))
         {
-            _processExecutor = processExecutor ?? new ProcessExecutor();
-            _logger = ApplicationLogging.LoggerFactory.CreateLogger<NugetRestoreProcess>();
+            throw new InputException(
+                "Solution path is required on .net framework projects. Please supply the solution path.");
         }
 
-        public void RestorePackages(string solutionPath, string msbuildPath = null)
-        {
-            _logger.LogInformation("Restoring nuget packages using {0}", "nuget.exe");
-            if (string.IsNullOrWhiteSpace(solutionPath))
-            {
-                throw new InputException("Solution path is required on .net framework projects. Please supply the solution path.");
-            }
-            solutionPath = Path.GetFullPath(solutionPath);
-            string solutionDir = Path.GetDirectoryName(solutionPath);
+        solutionPath = Path.GetFullPath(solutionPath);
+        var solutionDir = Path.GetDirectoryName(solutionPath);
 
-            // Validate nuget.exe is installed and included in path
-            var nugetWhereExeResult = _processExecutor.Start(solutionDir, "where.exe", "nuget.exe");
+        var helper = new MsBuildHelper(null, ProcessExecutor, msbuildPath, _logger);
+        var msBuildVersion = FindMsBuildShortVersion(helper);
+
+        // Validate nuget.exe is installed and included in path
+        var nugetWhereExeResult = ProcessExecutor.Start(solutionDir, "where.exe", "nuget.exe");
+        if (!nugetWhereExeResult.Output.ToLowerInvariant().Contains("nuget.exe"))
+        {
+            // try to extend the search
+            nugetWhereExeResult = ProcessExecutor.Start(solutionDir, "where.exe",
+                $"/R {Path.GetPathRoot(msbuildPath)} nuget.exe");
+
             if (!nugetWhereExeResult.Output.ToLowerInvariant().Contains("nuget.exe"))
-            {
-                throw new InputException("Nuget.exe should be installed to restore .net framework nuget packages. Install nuget.exe and make sure it's included in your path.");
-            }
-            // Get the first nuget.exe path from the where.exe output
-            var nugetPath = nugetWhereExeResult.Output.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault().Trim();
-
-            // Locate MSBuild.exe
-            msbuildPath ??= new MsBuildHelper().GetMsBuildPath(_processExecutor);
-            var msBuildVersionOutput = _processExecutor.Start(solutionDir, msbuildPath, "-version /nologo");
-            if (msBuildVersionOutput.ExitCode != ExitCodes.Success)
-            {
-                _logger.LogError("Unable to detect msbuild version");
-            }
-            var msBuildVersion = msBuildVersionOutput.Output.Trim();
-            _logger.LogDebug("Auto detected msbuild version {0} at: {1}", msBuildVersion, msbuildPath);
-
-            // Restore packages using nuget.exe
-            var nugetRestoreCommand = string.Format("restore \"{0}\" -MsBuildVersion \"{1}\"", solutionPath, msBuildVersion);
-            _logger.LogDebug("Restoring packages using command: {0} {1}", nugetPath, nugetRestoreCommand);
-
-            try
-            {
-                var nugetRestoreResult = _processExecutor.Start(solutionDir, nugetPath, nugetRestoreCommand, timeoutMs: 120000);
-                if (nugetRestoreResult.ExitCode != ExitCodes.Success)
-                {
-                    throw new InputException("Nuget.exe failed to restore packages for your solution. Please review your nuget setup.", nugetRestoreResult.Output);
-                }
-                _logger.LogDebug("Restored packages using nuget.exe, output: {0}", nugetRestoreResult.Output);
-            }
-            catch (OperationCanceledException)
-            {
-                throw new InputException("Nuget.exe failed to restore packages for your solution. Please review your nuget setup.");
-            }
+                throw new InputException(
+                    "Nuget.exe should be installed to restore .net framework nuget packages. Install nuget.exe and make sure it's included in your path.");
         }
+
+        // Get the first nuget.exe path from the where.exe output
+        var nugetPath = nugetWhereExeResult.Output
+            .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).First().Trim();
+
+        if (!InternalRestore(solutionPath, msBuildVersion, nugetPath) && !string.IsNullOrEmpty(msBuildVersion))
+        {
+            InternalRestore(solutionPath, string.Empty, nugetPath);
+        }
+    }
+
+    private bool InternalRestore(string solutionPath, string msBuildVersion, string nugetPath)
+    {
+        // Restore packages using nuget.exe
+        var nugetRestoreCommand = $"restore \"{solutionPath}\"";
+        if (!string.IsNullOrEmpty(msBuildVersion))
+        {
+            nugetRestoreCommand += $" -MsBuildVersion \"{msBuildVersion}\"";
+        }
+
+        _logger.LogDebug("Restoring packages using command: {NugetPath} {NugetRestoreCommand}", nugetPath,
+            nugetRestoreCommand);
+
+        const int NugetRestoreTimeoutMs = 120000;
+        try
+        {
+            var nugetRestoreResult = ProcessExecutor.Start(Path.GetDirectoryName(nugetPath), nugetPath,
+                nugetRestoreCommand, timeoutMs: NugetRestoreTimeoutMs);
+            if (nugetRestoreResult.ExitCode == ExitCodes.Success)
+            {
+                _logger.LogDebug("Restored packages using nuget.exe, output: {Error}", nugetRestoreResult.Output);
+                return true;
+            }
+
+            _logger.LogError("Failed to restore nuget packages. Nuget error: {Error}", nugetRestoreResult.Error);
+        }
+        catch (OperationCanceledException e)
+        {
+            _logger.LogError(e, "Failed to restore nuget packages in less than {time} seconds.", NugetRestoreTimeoutMs / 1000);
+        }
+        return false;
+    }
+
+    private string FindMsBuildShortVersion(MsBuildHelper helper)
+    {
+        var msBuildVersionOutput = helper.GetVersion();
+        string msBuildVersion;
+        if (string.IsNullOrWhiteSpace(msBuildVersionOutput))
+        {
+            msBuildVersion = string.Empty;
+            _logger.LogInformation("Auto detected msbuild at: {MsBuildPath}, but failed to get version.", helper.GetMsBuildPath());
+        }
+        else
+        {
+            msBuildVersion = msBuildVersionOutput.Trim();
+            _logger.LogDebug("Auto detected msbuild version {MsBuildVersion} at: {MsBuildPath}", msBuildVersion,
+                 helper.GetMsBuildPath());
+        }
+
+        return msBuildVersion;
     }
 }

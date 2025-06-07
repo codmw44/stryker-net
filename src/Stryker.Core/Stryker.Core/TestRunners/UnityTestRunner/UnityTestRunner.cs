@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
-using Stryker.Core.Initialisation;
-using Stryker.Core.Mutants;
-using Stryker.Core.Options;
+using Stryker.Abstractions;
+using Stryker.Abstractions.Options;
+using Stryker.Abstractions.Testing;
 using Stryker.Core.TestRunners.UnityTestRunner.RunUnity;
-using Stryker.Core.TestRunners.VsTest;
+using Stryker.TestRunner.Results;
+using Stryker.TestRunner.Tests;
+using Stryker.TestRunner.VsTest;
 
 namespace Stryker.Core.TestRunners.UnityTestRunner;
 
@@ -15,12 +17,12 @@ public class UnityTestRunner : ITestRunner
 {
     private readonly ILogger _logger;
     private readonly IRunUnity _runUnity;
-    private readonly StrykerOptions _strykerOptions;
+    private readonly IStrykerOptions _strykerOptions;
     private bool _firstMutationTestStarted;
     private TestRunResult _initialRunTestResult;
     private TestSet _testSet;
 
-    public UnityTestRunner(StrykerOptions strykerOptions, ILogger logger,
+    public UnityTestRunner(IStrykerOptions strykerOptions, ILogger logger,
         IRunUnity runUnity)
     {
         _strykerOptions = strykerOptions;
@@ -39,7 +41,7 @@ public class UnityTestRunner : ITestRunner
         _testSet.RegisterTests(testResultsXml
             .Descendants("test-case")
             .Where(element => element.Attribute("result").Value is "Passed" or "Failed")
-            .Select(element => new TestDescription(ToGuid(int.Parse(element.Attribute("id").Value)),
+            .Select(element => new TestDescription(element.Attribute("id").Value,
                 element.Attribute("name").Value, element.Attribute("fullname").Value)));
 
         _initialRunTestResult = new TestRunResult(Enumerable.Empty<VsTestDescription>(), GetPassedTests(testResultsXml),
@@ -48,20 +50,18 @@ public class UnityTestRunner : ITestRunner
         return true;
     }
 
-    public TestSet GetTests(IProjectAndTests project) => _testSet;
+    public ITestSet GetTests(IProjectAndTests project) => _testSet;
 
-    public TestRunResult InitialTest(IProjectAndTests project) => _initialRunTestResult;
+    public ITestRunResult InitialTest(IProjectAndTests project) => _initialRunTestResult;
 
-    public IEnumerable<CoverageRunResult> CaptureCoverage(IProjectAndTests project) =>
+    public IEnumerable<ICoverageRunResult> CaptureCoverage(IProjectAndTests project) =>
         throw new NotImplementedException();
-
 
     public void Dispose() => _runUnity.Dispose();
 
     //todo remove all modifications
     //todo remove installed package
-    public TestRunResult TestMultipleMutants(IProjectAndTests project, ITimeoutValueCalculator timeoutCalc,
-        IReadOnlyList<Mutant> mutants, TestUpdateHandler update)
+    public ITestRunResult TestMultipleMutants(IProjectAndTests project, ITimeoutValueCalculator timeoutCalc, IReadOnlyList<IMutant> mutants, ITestRunner.TestUpdateHandler update)
     {
         if (!_firstMutationTestStarted)
             //rerun unity to apply modifications and reload domain
@@ -72,7 +72,7 @@ public class UnityTestRunner : ITestRunner
         var passedTests = GetPassedTests(testResultsXml);
         var failedTests = GetFailedTests(testResultsXml);
         var remainingMutants =
-            update?.Invoke(mutants, failedTests, TestGuidsList.EveryTest(), GetTimeoutTestGuidsList());
+            update?.Invoke(mutants, failedTests, TestIdentifierList.EveryTest(), GetTimeoutTestGuidsList());
 
         if (remainingMutants == false)
             // all mutants status have been resolved, we can stop
@@ -95,38 +95,31 @@ public class UnityTestRunner : ITestRunner
         return xmlTestResults;
     }
 
-    private static TestGuidsList GetTimeoutTestGuidsList() =>
+    private static ITestIdentifiers GetTimeoutTestGuidsList() =>
         //NUnit result has no result of time-out https://docs.nunit.org/articles/nunit/technical-notes/usage/Test-Result-XML-Format.html#test-case
-        TestGuidsList.NoTest();
+        TestIdentifierList.NoTest();
 
-    private TestGuidsList GetPassedTests(XContainer testResultsXml)
+    private ITestIdentifiers GetPassedTests(XContainer testResultsXml)
     {
         var ids = testResultsXml.Descendants("test-case")
             .Where(element => element.Attribute("result").Value == "Passed")
-            .Select(element => ToGuid(int.Parse(element.Attribute("id").Value)));
+            .Select(element => element.Attribute("id").Value);
         var passedTests = ids.Count() == _testSet.Count
-            ? TestGuidsList.EveryTest()
-            : new TestGuidsList(_testSet.Extract(ids));
+            ? TestIdentifierList.EveryTest()
+            : new TestIdentifierList(_testSet.Extract(ids));
 
         return passedTests;
     }
 
-    private TestGuidsList GetFailedTests(XContainer testResultsXml)
+    private ITestIdentifiers GetFailedTests(XContainer testResultsXml)
     {
         var ids = testResultsXml.Descendants("test-case")
             .Where(element => element.Attribute("result").Value == "Failed")
-            .Select(element => ToGuid(int.Parse(element.Attribute("id").Value)));
+            .Select(element => element.Attribute("id").Value);
         var failedTests = ids.Count() == _testSet.Count
-            ? TestGuidsList.EveryTest()
-            : new TestGuidsList(_testSet.Extract(ids));
+            ? TestIdentifierList.EveryTest()
+            : new TestIdentifierList(_testSet.Extract(ids));
 
         return failedTests;
-    }
-
-    private static Guid ToGuid(int value)
-    {
-        var bytes = new byte[16];
-        BitConverter.GetBytes(value).CopyTo(bytes, 0);
-        return new Guid(bytes);
     }
 }

@@ -1,35 +1,30 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Shouldly;
-using Stryker.Core.Options;
-using Stryker.Core.Options.Inputs;
-using Xunit;
+using Stryker.Abstractions.Options;
+using Stryker.Abstractions.Options.Inputs;
 
-namespace Stryker.Core.UnitTest.Options.Inputs
+namespace Stryker.Core.UnitTest.Options.Inputs;
+
+[TestClass]
+public class DisableBailInputTests : TestBase
 {
-    public class DisableBailInputTests : TestBase
+    [TestMethod]
+    public void ShouldHaveHelpText()
     {
-        [Fact]
-        public void ShouldHaveHelpText()
-        {
-            var target = new DisableBailInput();
-            target.HelpText.ShouldBe(@"Disable abort unit testrun as soon as the first unit test fails. | default: 'False'");
-        }
+        var target = new DisableBailInput();
+        target.HelpText.ShouldBe(@"Disable abort unit testrun as soon as the first unit test fails. | default: 'False'");
+    }
 
-        [Theory]
-        [InlineData(false, OptimizationModes.None)]
-        [InlineData(true, OptimizationModes.DisableBail)]
-        [InlineData(null, OptimizationModes.None)]
-        public void ShouldValidate(bool? input, OptimizationModes expected)
-        {
-            var target = new DisableBailInput { SuppliedInput = input };
+    [TestMethod]
+    [DataRow(false, OptimizationModes.None)]
+    [DataRow(true, OptimizationModes.DisableBail)]
+    [DataRow(null, OptimizationModes.None)]
+    public void ShouldValidate(bool? input, OptimizationModes expected)
+    {
+        var target = new DisableBailInput { SuppliedInput = input };
 
-            var result = target.Validate();
+        var result = target.Validate();
 
-            result.ShouldBe(expected);
-        }
+        result.ShouldBe(expected);
     }
 }

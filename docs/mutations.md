@@ -4,7 +4,7 @@ sidebar_position: 40
 custom_edit_url: https://github.com/stryker-mutator/stryker-net/edit/master/docs/mutations.md
 ---
 
-Stryker supports a variety of mutators, which are listed below. In parentheses the names of correspondent mutations are specified, which you might need for the `exclude-mutations` section of the configuration.
+Stryker supports a variety of mutators, which are listed below. In parentheses the names of correspondent mutations are specified, which you might need for the `ignore-mutations` section of the configuration.
 
 Do you have a suggestion for a (new) mutator? Feel free to create an [issue](https://github.com/stryker-mutator/stryker-net/issues)!
 
@@ -118,42 +118,42 @@ Do you have a suggestion for a (new) mutator? Feel free to create an [issue](htt
 ## Linq Methods (_linq_)
 |      Original         |       Mutated         |
 | --------------------- | --------------------- |
-| `SingleOrDefault()`  | `Single()`             |
-| `Single()`           | `SingleOrDefault()`    |
-| `FirstOrDefault()`   | `First()`              |
-| `First()`             | `FirstOrDefault()`    |
-| `Last()`              | `First()`             |
 | `All()`               | `Any()`               |
 | `Any()`               | `All()`               |
-| `Skip()`              | `Take()`              |
-| `Take()`              | `Skip()`              |
-| `SkipWhile()`        | `TakeWhile()`        |
-| `TakeWhile()`        | `SkipWhile()`        |
-| `Min()`               | `Max()`               |
-| `Max()`               | `Min()`               |
-| `Sum()`               | `Max()`               |
-| `Count()`             | `Sum()`               |
+| `AsEnumerable()`     | `Reverse()`           |
 | `Average()`           | `Min()`               |
+| `Concat()`           | `Except()`            |
+| `Count()`             | `Sum()`               |
+| `Except()`           | `Concat()`            |
+| `First()`             | `FirstOrDefault()`    |
+| `FirstOrDefault()`   | `First()`              |
+| `Intersect()`        | `Union()`             |
+| `IntersectBy()`      | `UnionBy()`           |
+| `Last()`              | `First()`             |
+| `Max()`               | `Min()`               |
+| `MaxBy()`            | `MinBy()`             |
+| `Min()`               | `Max()`               |
+| `MinBy()`            | `MaxBy()`             |
+| `Order()`            | `OrderDescending()`   |
 | `OrderBy()`           | `OrderByDescending()` |
 | `OrderByDescending()` | `OrderBy()`           |
+| `OrderDescending()`  | `Order()`             |
+| `Reverse()`           | `AsEnumerable()`     |
+| `Single()`           | `SingleOrDefault()`    |
+| `SingleOrDefault()`  | `Single()`             |
+| `Skip()`              | `Take()`              |
+| `SkipLast()`         | `TakeLast()`          |
+| `SkipWhile()`        | `TakeWhile()`        |
+| `Sum()`               | `Max()`               |
+| `Take()`              | `Skip()`              |
+| `TakeLast()`         | `SkipLast()`          |
+| `TakeWhile()`        | `SkipWhile()`        |
 | `ThenBy()`            | `ThenByDescending()`  |
 | `ThenByDescending()`  | `ThenBy()`            |
-| `Reverse()`           | `AsEnumerable()`     |
-| `AsEnumerable()`     | `Reverse()`           |
 | `Union()`            | `Intersect()`         |
-| `Intersect()`        | `Union()`             |
-| `Concat()`           | `Except()`            |
-| `Except()`           | `Concat()`            |
-| `MinBy()`            | `MaxBy()`             |
-| `MaxBy()`            | `MinBy()`             |
-| `SkipLast()`         | `TakeLast()`          |
-| `TakeLast()`         | `SkipLast()`          |
-| `Order()`            | `OrderDescending()`   |
-| `OrderDescending()`  | `Order()`             |
 | `UnionBy()`          | `IntersectBy()`       |
-| `IntersectBy()`      | `UnionBy()`           |
 
-## String Literals and Constants (_string_)
+## String Literals (_string_)
 | Original | Mutated |
 | ------------- | ------------- |
 | `"foo"` | `""` |
@@ -166,6 +166,26 @@ Do you have a suggestion for a (new) mutator? Feel free to create an [issue](htt
 | `string.IsNullOrWhiteSpace(x)` | `(x != null)` |
 | `string.IsNullOrWhiteSpace(x)` | `(x != "")` |
 | `string.IsNullOrWhiteSpace(x)` | `(x.Trim() != "")` |
+
+## String Methods (_stringmethod_)
+| Original               | Mutated              |
+|------------------------|----------------------|
+| `ElementAt()`          | `'\0'`               |
+| `ElementAtOrDefault()` | `'\0'`               |
+| `EndsWith()`           | `StartsWith()`       |
+| `IndexOf()`            | `LastIndexOf()`      |
+| `LastIndexOf()`        | `IndexOf()`          |
+| `PadLeft()`            | `PadRight()`         |
+| `PadRight()`           | `PadLeft()`          |
+| `StartsWith()`         | `EndsWith()`         |
+| `Substring()`          | `""`                 |
+| `ToLower()`            | `ToUpper()`          |
+| `ToLowerInvariant()`   | `ToUpperInvariant()` |
+| `ToUpper()`            | `ToLower()`          |
+| `ToUpperInvariant()`   | `ToLowerInvariant()` |
+| `Trim()`               | `""`                 |
+| `TrimEnd()`            | `TrimStart()`        |
+| `TrimStart()`          | `TrimEnd()`          |
 
 ## Bitwise Operators (_bitwise_)
 | Original            | Mutated             |
@@ -238,3 +258,15 @@ For the full list of all available regex mutations, see the [regex mutator docs]
 | `a ?? b`            | `b ?? a`                |
 | `a ?? b`            | `a`                 |
 | `a ?? b`            | `b`                 |
+
+## Conditional Operators (_conditional_)
+| Original            | Mutated             |
+|---------------------|---------------------|
+| `x ? a : b`         | `true ? a : b`      |
+| `x ? a : b`         | `false ? a : b`     |
+
+## Collection Expressions (_collectionexpression_)
+| Original            | Mutated     |
+|---------------------|-------------|
+| `[]`                | `[default]` |
+| `[1, 2, 3]`         | `[]`        |

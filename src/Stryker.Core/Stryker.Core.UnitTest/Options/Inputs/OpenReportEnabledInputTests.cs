@@ -1,31 +1,31 @@
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Shouldly;
-using Stryker.Core.Exceptions;
-using Stryker.Core.Options.Inputs;
-using Xunit;
+using Stryker.Abstractions.Options.Inputs;
+using Stryker.Core.UnitTest;
 
-namespace Stryker.Core.UnitTest.Options.Inputs
+namespace Stryker.Core.UnitTest.Options.Inputs;
+
+[TestClass]
+public class OpenReportEnabledInputTests : TestBase
 {
-    public class OpenReportEnabledInputTests : TestBase
+    [TestMethod]
+    public void ShouldHaveNoHelpText()
     {
-        [Fact]
-        public void ShouldHaveNoHelpText()
-        {
-            var target = new OpenReportEnabledInput();
-            target.HelpText.ShouldBe(@" | default: 'False'");
-        }
+        var target = new OpenReportEnabledInput();
+        target.HelpText.ShouldBe(@" | default: 'False'");
+    }
 
-        [Fact]
-        public void ShouldSetToTrue()
-        {
-            var target = new OpenReportEnabledInput { SuppliedInput = true };
-            target.Validate().ShouldBeTrue();
-        }
+    [TestMethod]
+    public void ShouldSetToTrue()
+    {
+        var target = new OpenReportEnabledInput { SuppliedInput = true };
+        target.Validate().ShouldBeTrue();
+    }
 
-        [Fact]
-        public void ShouldSetToFalse()
-        {
-            var target = new OpenReportEnabledInput { SuppliedInput = false };
-            target.Validate().ShouldBeFalse();
-        }
+    [TestMethod]
+    public void ShouldSetToFalse()
+    {
+        var target = new OpenReportEnabledInput { SuppliedInput = false };
+        target.Validate().ShouldBeFalse();
     }
 }

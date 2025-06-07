@@ -1,61 +1,74 @@
 using Shouldly;
-using Stryker.Core.Baseline.Providers;
-using Stryker.Core.Exceptions;
-using Stryker.Core.Options.Inputs;
-using Xunit;
+using Stryker.Abstractions.Exceptions;
+using Stryker.Abstractions.Options.Inputs;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Stryker.Abstractions.Baseline;
+using Stryker.Core.UnitTest;
 
-namespace Stryker.Core.UnitTest.Options.Inputs
+namespace Stryker.Core.UnitTest.Options.Inputs;
+
+[TestClass]
+public class AzureFileStorageUrlInputTests : TestBase
 {
-    public class AzureFileStorageUrlInputTests : TestBase
+    private const string ValidUrlInput = "http://example.com:8042";
+
+    [TestMethod]
+    public void ShouldHaveHelpText()
     {
-        [Fact]
-        public void ShouldHaveHelpText()
-        {
-            var target = new AzureFileStorageUrlInput();
-            target.HelpText.ShouldBe(@"The url for the Azure File Storage is only needed when the Azure baseline provider is selected. 
-The url should look something like this: 
-https://STORAGE_NAME.file.core.windows.net/FILE_SHARE_NAME 
+        var target = new AzureFileStorageUrlInput();
+        target.HelpText.ShouldBe(@"The url for the Azure File Storage is only needed when the Azure baseline provider is selected.
+The url should look something like this:
+https://STORAGE_NAME.file.core.windows.net/FILE_SHARE_NAME
 Note, the url might be different depending on where your file storage is hosted. | default: ''");
-        }
+    }
 
-        [Fact]
-        public void ShouldHaveDefault()
-        {
-            var target = new AzureFileStorageUrlInput { SuppliedInput = null };
+    [TestMethod]
+    public void ShouldReturnDefault_WhenProviderNotAzureFileStorage()
+    {
+        var target = new AzureFileStorageUrlInput { SuppliedInput = null };
 
-            var result = target.Validate(BaselineProvider.Dashboard);
+        var result = target.Validate(BaselineProvider.Dashboard, true);
 
-            result.ShouldBe(string.Empty);
-        }
+        result.ShouldBe(string.Empty);
+    }
 
-        [Fact]
-        public void ShouldAllowUri()
-        {
-            var target = new AzureFileStorageUrlInput { SuppliedInput = "http://example.com:8042" };
+    [TestMethod]
+    public void ShouldReturnDefault_WhenBaselineIsDisabled()
+    {
+        var target = new AzureFileStorageUrlInput { SuppliedInput = null };
 
-            var result = target.Validate(BaselineProvider.AzureFileStorage);
+        var result = target.Validate(BaselineProvider.AzureFileStorage, false);
 
-            result.ShouldBe("http://example.com:8042");
-        }
+        result.ShouldBe(string.Empty);
+    }
 
-        [Fact]
-        public void ShouldThrowException_WhenAzureStorageUrlAndSASNull()
-        {
-            var target = new AzureFileStorageUrlInput { SuppliedInput = null };
+    [TestMethod]
+    public void ShouldAllowUri()
+    {
+        var target = new AzureFileStorageUrlInput { SuppliedInput = ValidUrlInput };
 
-            var exception = Should.Throw<InputException>(() => target.Validate(BaselineProvider.AzureFileStorage));
+        var result = target.Validate(BaselineProvider.AzureFileStorage, true);
 
-            exception.Message.ShouldBe(@"The Azure File Storage url is required when Azure File Storage is used for dashboard compare.");
-        }
+        result.ShouldBe("http://example.com:8042");
+    }
 
-        [Fact]
-        public void ShouldThrowException_OnInvalidUri()
-        {
-            var target = new AzureFileStorageUrlInput { SuppliedInput = "test" };
+    [TestMethod]
+    public void ShouldThrowException_WhenAzureStorageUrlAndSASNull()
+    {
+        var target = new AzureFileStorageUrlInput { SuppliedInput = null };
 
-            var exception = Should.Throw<InputException>(() => target.Validate(BaselineProvider.AzureFileStorage));
+        var exception = Should.Throw<InputException>(() => target.Validate(BaselineProvider.AzureFileStorage, true));
 
-            exception.Message.ShouldBe("The Azure File Storage url is not a valid Uri: test");
-        }
+        exception.Message.ShouldBe(@"The Azure File Storage url is required when Azure File Storage is used for dashboard compare.");
+    }
+
+    [TestMethod]
+    public void ShouldThrowException_OnInvalidUri()
+    {
+        var target = new AzureFileStorageUrlInput { SuppliedInput = "test" };
+
+        var exception = Should.Throw<InputException>(() => target.Validate(BaselineProvider.AzureFileStorage, true));
+
+        exception.Message.ShouldBe("The Azure File Storage url is not a valid Uri: test");
     }
 }

@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading;
 using System.Xml;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollector.InProcDataCollector;
@@ -12,6 +11,17 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.InProcDataCollector;
 
 namespace Stryker.DataCollector
 {
+    internal class ThrowingListener : TraceListener
+    {
+        public override void Fail(string message) => throw new ArgumentException(message);
+
+        public override void Fail(string message, string detailMessage) => throw new ArgumentException(detailMessage, message);
+
+        public override void Write(string message) {}
+
+        public override void WriteLine(string message) {}
+    }
+
     [DataCollectorFriendlyName("StrykerCoverage")]
     [DataCollectorTypeUri("https://stryker-mutator.io/")]
     public class CoverageCollector : InProcDataCollection
@@ -19,6 +29,7 @@ namespace Stryker.DataCollector
         private IDataCollectionSink _dataSink;
         private bool _coverageOn;
         private int _activeMutation = -1;
+
         private Action<string> _logger;
         private readonly IDictionary<string, int> _mutantTestedBy = new Dictionary<string, int>();
 
@@ -28,6 +39,8 @@ namespace Stryker.DataCollector
 
         private MethodInfo _getCoverageData;
         private IList<int> _mutationCoveredOutsideTests;
+        private DefaultTraceListener _defaultTraceListener;
+        private ThrowingListener _throwingListener;
 
         private const string AnyId = "*";
         private const string TemplateForConfiguration =
@@ -36,6 +49,7 @@ namespace Stryker.DataCollector
 
         public const string PropertyName = "Stryker.Coverage";
         public const string OutOfTestsPropertyName = "Stryker.Coverage.OutOfTests";
+        public const string CoverageLog = "CoverageLog";
 
         public string MutantList => string.Join(",", _mutantTestedBy.Values.Distinct());
 
@@ -78,7 +92,7 @@ namespace Stryker.DataCollector
         public void Initialize(IDataCollectionSink dataCollectionSink)
         {
             _dataSink = dataCollectionSink;
-            SetLogger(Console.WriteLine);
+            _throwingListener = new ThrowingListener();
         }
 
         public void SetLogger(Action<string> logger) => _logger = logger;
@@ -88,6 +102,14 @@ namespace Stryker.DataCollector
         // called before any test is run
         public void TestSessionStart(TestSessionStartArgs testSessionStartArgs)
         {
+            _defaultTraceListener = Trace.Listeners.OfType<DefaultTraceListener>().FirstOrDefault();
+            if (_defaultTraceListener != null)
+            {
+                Trace.Listeners.Remove(_defaultTraceListener);
+            }
+
+            Trace.Listeners.Add(_throwingListener);
+
             var configuration = testSessionStartArgs.Configuration;
             ReadConfiguration(configuration);
 
@@ -102,9 +124,17 @@ namespace Stryker.DataCollector
                 FindControlType(assembly);
             }
 
-            //Debugger.Launch();
-
             Log($"Test Session start with conf {configuration}.");
+        }
+
+        public void TestSessionEnd(TestSessionEndArgs testSessionEndArgs)
+        {
+            Log($"TestSession ends.");
+            Trace.Listeners.Remove(_throwingListener);
+            if (_defaultTraceListener != null)
+            {
+                Trace.Listeners.Add(_defaultTraceListener);
+            }
         }
 
         private void OnAssemblyLoaded(object sender, AssemblyLoadEventArgs args)
@@ -172,12 +202,12 @@ namespace Stryker.DataCollector
 
         private int GetActiveMutantForThisTest(string testId)
         {
-            if (_mutantTestedBy.ContainsKey(testId))
+            if (_mutantTestedBy.TryGetValue(testId, out var test))
             {
-                return _mutantTestedBy[testId];
+                return test;
             }
 
-            return _mutantTestedBy.ContainsKey(AnyId) ? _mutantTestedBy[AnyId] : -1;
+            return _mutantTestedBy.TryGetValue(AnyId, out var value) ? value : -1;
         }
 
         private void ParseTestMapping(XmlNodeList testMapping)
@@ -244,6 +274,7 @@ namespace Stryker.DataCollector
             {
                 // no test covered any mutations, so the controller was never properly initialized
                 _dataSink.SendData(dataCollectionContext, PropertyName, ";");
+                _dataSink.SendData(dataCollectionContext, CoverageLog, $"Test {dataCollectionContext.TestCase.DisplayName} endend. No mutant covered so far.");
                 return;
             }
 
@@ -281,8 +312,6 @@ namespace Stryker.DataCollector
                 _mutationCoveredOutsideTests = covered[1].ToList();
             }
         }
-
-        public void TestSessionEnd(TestSessionEndArgs testSessionEndArgs) => Log($"TestSession ends.");
 
         private readonly struct TestCoverageInfo
         {

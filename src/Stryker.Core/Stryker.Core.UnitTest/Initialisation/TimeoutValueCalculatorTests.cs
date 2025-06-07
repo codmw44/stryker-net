@@ -1,20 +1,20 @@
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Shouldly;
 using Stryker.Core.Initialisation;
-using Xunit;
 
-namespace Stryker.Core.UnitTest.Initialisation
+namespace Stryker.Core.UnitTest.Initialisation;
+
+[TestClass]
+public class TimeoutValueCalculatorTests : TestBase
 {
-    public class TimeoutValueCalculatorTests : TestBase
+    [TestMethod]
+    [DataRow(1000, 0, 1500)]
+    [DataRow(1000, 2000, 3500)]
+    [DataRow(4000, 2000, 8000)]
+    public void Calculator_ShouldCalculateTimeoutValueNoExtra(int baseTime, int extra, int expected)
     {
-        [Theory]
-        [InlineData(1000, 0, 1500)]
-        [InlineData(1000, 2000, 3500)]
-        [InlineData(4000, 2000, 8000)]
-        public void Calculator_ShouldCalculateTimeoutValueNoExtra(int baseTime, int extra, int expected)
-        {
-            var target = new TimeoutValueCalculator(extra);
+        var target = new TimeoutValueCalculator(extra);
 
-            target.CalculateTimeoutValue(baseTime).ShouldBe(expected);
-        }
+        target.CalculateTimeoutValue(baseTime).ShouldBe(expected);
     }
 }

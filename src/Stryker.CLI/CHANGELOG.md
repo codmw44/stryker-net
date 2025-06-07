@@ -1,3 +1,177 @@
+# [4.6.0](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@4.5.1...dotnet-stryker@4.6.0) (2025-06-06)
+
+
+### Bug Fixes
+
+* Typo in exception message ([#3197](https://github.com/stryker-mutator/stryker-net/issues/3197)) ([b873b62](https://github.com/stryker-mutator/stryker-net/commit/b873b6268c7bdd9ca7529ac50e6329d05327f389))
+
+
+
+## [4.5.1](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@4.5.0...dotnet-stryker@4.5.1) (2025-02-04)
+
+
+
+# [4.5.0](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@4.4.1...dotnet-stryker@4.5.0) (2025-01-03)
+
+
+### Features
+
+* Support csharp 13 ([#3137](https://github.com/stryker-mutator/stryker-net/issues/3137)) ([e567ab3](https://github.com/stryker-mutator/stryker-net/commit/e567ab3f5255bc974624a999aa256f0cff1b90cd))
+
+
+
+## [4.4.1](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@4.4.0...dotnet-stryker@4.4.1) (2024-11-11)
+
+
+
+# [4.4.0](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@4.3.0...dotnet-stryker@4.4.0) (2024-11-08)
+
+
+
+# [4.3.0](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@4.2.0...dotnet-stryker@4.3.0) (2024-10-14)
+
+
+### Features
+
+* Add --skip-version-check flag to disable automatic version checks ([#3045](https://github.com/stryker-mutator/stryker-net/issues/3045)) ([db8e9e8](https://github.com/stryker-mutator/stryker-net/commit/db8e9e8e86b00d4b3c2d77aa8725db4c4904a5e2))
+
+
+
+# [4.2.0](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@4.1.0...dotnet-stryker@4.2.0) (2024-09-13)
+
+
+### Bug Fixes
+
+* **real-time-reporting:** Properly handle when browser is closed during mutation testing ([#2985](https://github.com/stryker-mutator/stryker-net/issues/2985)) ([963225d](https://github.com/stryker-mutator/stryker-net/commit/963225d0f96fddf27c324d7b0cb6e0519f695ccd))
+
+
+### Features
+
+* **mutating:** constant patterns ([#2992](https://github.com/stryker-mutator/stryker-net/issues/2992)) ([83349de](https://github.com/stryker-mutator/stryker-net/commit/83349de662c53368b344e67bf65ae872e8a31288))
+* Parse stryker-config.yml and stryker-config.yaml by default ([#2954](https://github.com/stryker-mutator/stryker-net/issues/2954)) ([d1196c0](https://github.com/stryker-mutator/stryker-net/commit/d1196c0cd8becbbbd8e96604bf9ccfcd900807f3))
+
+
+
+# [4.1.0](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@4.0.6...dotnet-stryker@4.1.0) (2024-07-08)
+
+
+### Features
+
+* Specify build Configuration ([#2928](https://github.com/stryker-mutator/stryker-net/issues/2928)) ([99827d5](https://github.com/stryker-mutator/stryker-net/commit/99827d52b198b394999596d1e13b8f81f26aff9b)), closes [#2930](https://github.com/stryker-mutator/stryker-net/issues/2930) [#2748](https://github.com/stryker-mutator/stryker-net/issues/2748) [#2693](https://github.com/stryker-mutator/stryker-net/issues/2693) [#2587](https://github.com/stryker-mutator/stryker-net/issues/2587) [#2886](https://github.com/stryker-mutator/stryker-net/issues/2886) [#2393](https://github.com/stryker-mutator/stryker-net/issues/2393) [#2077](https://github.com/stryker-mutator/stryker-net/issues/2077) [#2938](https://github.com/stryker-mutator/stryker-net/issues/2938)
+
+
+
+## [4.0.6](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@4.0.5...dotnet-stryker@4.0.6) (2024-05-25)
+
+
+### Bug Fixes
+
+* Logging of unexpected test case could result in a crash ([#2929](https://github.com/stryker-mutator/stryker-net/issues/2929)) ([#2931](https://github.com/stryker-mutator/stryker-net/issues/2931)) ([1db4b6c](https://github.com/stryker-mutator/stryker-net/commit/1db4b6c948ea06f4867f2d0c9b1fbba3098c8d8b))
+
+
+
+## [4.0.5](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@4.0.4...dotnet-stryker@4.0.5) (2024-04-26)
+
+
+
+## [4.0.4](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@4.0.3...dotnet-stryker@4.0.4) (2024-04-05)
+
+
+
+## [4.0.3](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@4.0.2...dotnet-stryker@4.0.3) (2024-03-29)
+
+
+### Reverts
+
+* Revert publish and "chore(performance): Parallel testinit" (#2896) ([b45f64f](https://github.com/stryker-mutator/stryker-net/commit/b45f64ff741b3b7332990ff7f0ab606f917aa693)), closes [#2896](https://github.com/stryker-mutator/stryker-net/issues/2896) [#2894](https://github.com/stryker-mutator/stryker-net/issues/2894)
+
+
+
+## [4.0.2](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@4.0.1...dotnet-stryker@4.0.2) (2024-03-20)
+
+
+
+## [4.0.1](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@4.0.0...dotnet-stryker@4.0.1) (2024-03-15)
+
+
+### Bug Fixes
+
+* Improve build, restore and test ([#2845](https://github.com/stryker-mutator/stryker-net/issues/2845)) ([a14b64b](https://github.com/stryker-mutator/stryker-net/commit/a14b64bbea21cb44c8bc9868c826a5344500e058))
+
+
+
+# [4.0.0](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@3.13.2...dotnet-stryker@4.0.0) (2024-02-16)
+
+
+### Features
+
+* **reporters:** add support for real-time reporting in `DashboardReporter` ([#2563](https://github.com/stryker-mutator/stryker-net/issues/2563)) ([1ab3f29](https://github.com/stryker-mutator/stryker-net/commit/1ab3f293fabea735954edf15febcd4ea353ac1c5))
+* **target framework:** Update dotnet target framework from 6 to 8 ([#2851](https://github.com/stryker-mutator/stryker-net/issues/2851)) ([9a978e6](https://github.com/stryker-mutator/stryker-net/commit/9a978e6dcfcd19b3cdce77322da13027d58e0651))
+
+
+
+## [3.13.2](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@3.13.1...dotnet-stryker@3.13.2) (2024-01-25)
+
+
+### Reverts
+
+* Revert "Publish" ([73a8177](https://github.com/stryker-mutator/stryker-net/commit/73a8177949157650100523dfe0368e75aabd56cf))
+
+
+
+## [3.13.1](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@3.13.0...dotnet-stryker@3.13.1) (2024-01-05)
+
+
+
+# [3.13.0](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@3.12.0...dotnet-stryker@3.13.0) (2023-12-22)
+
+
+### Bug Fixes
+
+* **file config:** Since and Baseline are implicitly enabled when the config object exists in the config file ([#2805](https://github.com/stryker-mutator/stryker-net/issues/2805)) ([2809a67](https://github.com/stryker-mutator/stryker-net/commit/2809a67727f815f862e9931a60b153007a491008))
+
+
+### Features
+
+* **init:** Add stryker init command ([#2727](https://github.com/stryker-mutator/stryker-net/issues/2727)) ([ebe350e](https://github.com/stryker-mutator/stryker-net/commit/ebe350e7755948c4adb484d1ce610ffa26580f30))
+
+
+
+# [3.12.0](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@3.11.1...dotnet-stryker@3.12.0) (2023-11-22)
+
+
+
+## [3.11.1](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@3.11.0...dotnet-stryker@3.11.1) (2023-10-31)
+
+
+
+# [3.11.0](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@3.10.0...dotnet-stryker@3.11.0) (2023-10-27)
+
+
+### Features
+
+* **baseline:** Support large reports in azure file share ([#2588](https://github.com/stryker-mutator/stryker-net/issues/2588)) ([4d6dd37](https://github.com/stryker-mutator/stryker-net/commit/4d6dd37929afc8b1dc6153ebcd25f973ad630dbe))
+
+
+
+# [3.10.0](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@3.9.2...dotnet-stryker@3.10.0) (2023-07-28)
+
+
+### Bug Fixes
+
+* Improve Vstest support ([#2595](https://github.com/stryker-mutator/stryker-net/issues/2595)) ([04268c1](https://github.com/stryker-mutator/stryker-net/commit/04268c10366d82bff2a6d404bb2383481530ce8d))
+* Small changes to configuration help text ([#2586](https://github.com/stryker-mutator/stryker-net/issues/2586)) ([c68c14e](https://github.com/stryker-mutator/stryker-net/commit/c68c14eb767705b418e189c13971cf58a5585647))
+
+
+
+## [3.9.2](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@3.9.1...dotnet-stryker@3.9.2) (2023-06-09)
+
+
+
+## [3.9.1](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@3.9.0...dotnet-stryker@3.9.1) (2023-06-09)
+
+
+
 # [3.9.0](https://github.com/stryker-mutator/stryker-net/compare/dotnet-stryker@3.8.2...dotnet-stryker@3.9.0) (2023-05-12)
 
 

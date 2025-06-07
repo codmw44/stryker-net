@@ -1,12 +1,10 @@
 using System.Collections.Generic;
-using Stryker.Core.Initialisation;
-using Stryker.Core.Mutants;
-using Stryker.Core.TestRunners;
+using Stryker.Abstractions;
+using Stryker.Abstractions.Testing;
 
-namespace Stryker.Core.CoverageAnalysis
+namespace Stryker.Core.CoverageAnalysis;
+
+public interface ICoverageAnalyser
 {
-    public interface ICoverageAnalyser
-    {
-        void DetermineTestCoverage(IProjectAndTests project, ITestRunner runner, IEnumerable<Mutant> mutants, ITestGuids resultFailingTests);
-    }
+    void DetermineTestCoverage(IProjectAndTests project, ITestRunner runner, IEnumerable<IMutant> mutants, ITestIdentifiers resultFailingTests);
 }

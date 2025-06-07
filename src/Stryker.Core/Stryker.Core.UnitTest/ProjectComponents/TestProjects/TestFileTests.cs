@@ -1,35 +1,36 @@
 using System;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Shouldly;
+using Stryker.Abstractions.Testing;
 using Stryker.Core.ProjectComponents.TestProjects;
-using Xunit;
 
-namespace Stryker.Core.UnitTest.ProjectComponents.TestProjects
+namespace Stryker.Core.UnitTest.ProjectComponents.TestProjects;
+
+[TestClass]
+public class TestFileTests
 {
-    public class TestFileTests
+    [TestMethod]
+    public void MergeTestFiles()
     {
-        [Fact]
-        public void MergeTestFiles()
+        // Arrange
+        var testCase1Id = Guid.NewGuid().ToString();
+        var node = SyntaxFactory.Block();
+        var fileA = new TestFile
         {
-            // Arrange
-            var testCase1Id = Guid.NewGuid();
-            var node = SyntaxFactory.Block();
-            var fileA = new TestFile
-            {
-                FilePath = "/c/",
-                Source = "bla"
-            };
-            fileA.AddTest(testCase1Id, "test1", node);
-            var fileB = new TestFile
-            {
-                FilePath = "/c/",
-                Source = "bla"
-            };
-            fileB.AddTest(testCase1Id, "test1", node);
+            FilePath = "/c/",
+            Source = "bla"
+        };
+        fileA.AddTest(testCase1Id, "test1", node);
+        var fileB = new TestFile
+        {
+            FilePath = "/c/",
+            Source = "bla"
+        };
+        fileB.AddTest(testCase1Id, "test1", node);
 
-            // Assert
-            fileA.ShouldBe(fileB);
-            fileA.GetHashCode().ShouldBe(fileB.GetHashCode());
-        }
+        // Assert
+        fileA.ShouldBe(fileB);
+        fileA.GetHashCode().ShouldBe(fileB.GetHashCode());
     }
 }
