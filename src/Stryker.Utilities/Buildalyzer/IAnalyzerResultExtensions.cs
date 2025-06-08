@@ -189,8 +189,10 @@ Generated source code may be missing.", analyzer);
         var hasTestProjectTypeGuid = analyzerResult
             .GetPropertyOrDefault("ProjectTypeGuids", "")
             .Contains("{3AC096D0-A1C2-E12C-1390-A8335801FDAB}");
+        var hasUnityTests = analyzerResult
+            .References.Any(s => s.Contains("UnityEngine.TestRunner") || s.Contains("UnityEditor.TestRunner"));
 
-        return isTestProject || hasTestProjectTypeGuid;
+        return isTestProject || hasTestProjectTypeGuid || hasUnityTests;
     }
 
     public static OutputKind GetOutputKind(this IAnalyzerResult analyzerResult) =>

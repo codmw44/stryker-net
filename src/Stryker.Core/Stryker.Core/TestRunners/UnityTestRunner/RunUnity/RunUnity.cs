@@ -142,6 +142,7 @@ public class RunUnity : IRunUnity
 
         _unityProcessTask = Task.Run(() =>
         {
+            //todo use path to project from stykeroptions
             var processResult = _processExecutor.Start(".", _unityPath.GetPath(strykerOptions),
                 $"-logFile {pathToUnityLogFile} " + _currentUnityRunArguments);
             _logger.LogDebug("OpenUnity finished");
@@ -170,7 +171,7 @@ public class RunUnity : IRunUnity
 
     private void WaitUntilEndOfCommand()
     {
-        while (string.IsNullOrWhiteSpace(File.ReadAllText(_pathToUnityListenFile)) == false)
+        while (!string.IsNullOrWhiteSpace(File.ReadAllText(_pathToUnityListenFile)))
         {
             ThrowExceptionIfExists();
         }

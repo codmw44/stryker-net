@@ -14,6 +14,7 @@ using Stryker.Abstractions.Reporting;
 using Stryker.Abstractions.Testing;
 using Stryker.Core.MutationTest;
 using Stryker.Core.ProjectComponents.SourceProjects;
+using Stryker.Core.TestRunners.UnityTestRunner.RunUnity;
 using Stryker.TestRunner.VsTest;
 using Stryker.Utilities.Logging;
 
@@ -48,8 +49,12 @@ public sealed class ProjectOrchestrator : IProjectOrchestrator
     public IEnumerable<IMutationTestProcess> MutateProjects(IStrykerOptions options, IReporter reporters,
         ITestRunner runner = null)
     {
-
         _initializationProcess ??= new InitialisationProcess(_fileResolver, _initialBuildProcess);
+        if (options.IsUnityProject())
+        {
+            _logger.LogInformation("Found Unity project. Run Unity project to generate sln and csproj files.");
+            RunUnity.GetSingleInstance().ReloadDomain(options, options.ProjectPath);
+        }
         var projectInfos = _initializationProcess.GetMutableProjectsInfo(options);
 
         if (!projectInfos.Any())
@@ -58,7 +63,8 @@ public sealed class ProjectOrchestrator : IProjectOrchestrator
             return [];
         }
 
-        _initializationProcess.BuildProjects(options, projectInfos);
+        if (!options.IsUnityProject())
+            _initializationProcess.BuildProjects(options, projectInfos);
 
         // create a test runner
         _runner = runner ?? new VsTestRunnerPool(options, fileSystem: _fileResolver.FileSystem);

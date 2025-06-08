@@ -66,12 +66,13 @@ public class StrykerRunner : IStrykerRunner
         try
         {
             ITestRunner runner = null;
-                if (options.IsUnityProject())
-                {
-                    runner = new UnityTestRunner(options, loggerFactory.CreateLogger<UnityTestRunner>(), RunUnity.GetSingleInstance());
-                }
-                // Mutate
-                _mutationTestProcesses = projectOrchestrator.MutateProjects(options, reporters, runner).ToList();
+            if (options.IsUnityProject())
+            {
+                runner = new UnityTestRunner(options, loggerFactory.CreateLogger<UnityTestRunner>(), RunUnity.GetSingleInstance());
+            }
+
+            // Mutate
+            _mutationTestProcesses = projectOrchestrator.MutateProjects(options, reporters, runner).ToList();
 
             var rootComponent = AddRootFolderIfMultiProject(_mutationTestProcesses.Select(x => x.Input.SourceProjectInfo.ProjectContents).ToList(), options);
             var combinedTestProjectsInfo = _mutationTestProcesses.Select(mtp => mtp.Input.TestProjectsInfo).Aggregate((a, b) => (TestProjectsInfo)a + (TestProjectsInfo)b);

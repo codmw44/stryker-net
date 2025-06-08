@@ -1,6 +1,5 @@
 using System.IO;
 using System.Linq;
-using Stryker.Abstractions;
 using Stryker.Abstractions.Options;
 
 namespace Stryker.Core.Initialisation;
@@ -14,17 +13,8 @@ public static class UnityStrykerOptionsExtension
 
         var path = options.GetUnityProjectDirectory();
 
-        var unityCsProjFile = Directory
-            .GetFiles(path, "Assembly-CSharp.csproj",
-                SearchOption.TopDirectoryOnly).FirstOrDefault();
-        if (string.IsNullOrEmpty(unityCsProjFile))
-        {
-            return false;
-        }
-
-        var containsUnityEngineReferences =
-            File.ReadAllText(unityCsProjFile).Contains("<Reference Include=\"UnityEngine.");
-        return containsUnityEngineReferences;
+        var directories = Directory.GetDirectories(path);
+        return directories.Contains(Path.Combine(path, "Assets")) && directories.Contains(Path.Combine(path, "Packages")) && directories.Contains(Path.Combine(path, "ProjectSettings"));
     }
 
     public static string GetUnityProjectDirectory(this IStrykerOptions options)

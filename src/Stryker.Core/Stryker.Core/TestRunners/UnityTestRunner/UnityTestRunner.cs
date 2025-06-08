@@ -54,8 +54,7 @@ public class UnityTestRunner : ITestRunner
 
     public ITestRunResult InitialTest(IProjectAndTests project) => _initialRunTestResult;
 
-    public IEnumerable<ICoverageRunResult> CaptureCoverage(IProjectAndTests project) =>
-        throw new NotImplementedException();
+    public IEnumerable<ICoverageRunResult> CaptureCoverage(IProjectAndTests project) => [];
 
     public void Dispose() => _runUnity.Dispose();
 
