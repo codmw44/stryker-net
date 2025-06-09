@@ -53,7 +53,7 @@ namespace Stryker.UnitySDK
                     File.WriteAllText(textFileToListen, string.Empty);
 
                     EditorUtility.RequestScriptReload();
-                    yield return new WaitForSeconds(1f);
+                    yield return new WaitForSeconds(0.1f);
                     Console.WriteLine($"[Stryker][{DateTime.Now.ToLongTimeString()}] After RequestScriptReload");
 
                 }
@@ -69,13 +69,13 @@ namespace Stryker.UnitySDK
 
                     while (TestsInProgress)
                     {
-                        yield return new WaitForSeconds(1f);
+                        yield return new WaitForSeconds(0.1f);
                     }
                     File.WriteAllText(textFileToListen, string.Empty);
                 }
 				else
 				{
-					yield return new WaitForSeconds(1f);
+					yield return new WaitForSeconds(0.1f);
 				}
 			}
 		}
