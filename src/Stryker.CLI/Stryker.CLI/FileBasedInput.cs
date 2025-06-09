@@ -49,7 +49,7 @@ public class FileBasedInput : IExtraData
     [JsonPropertyName("path-to-unity")]
         public string PathToUnity { get; init; }
 
-        [JsonPropertyName("project")]
+    [JsonPropertyName("project")]
     public string Project { get; init; }
 
     [JsonPropertyName("coverage-analysis")]

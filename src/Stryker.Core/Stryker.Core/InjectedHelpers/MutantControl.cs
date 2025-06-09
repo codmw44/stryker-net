@@ -5,7 +5,6 @@ using System.Text;
 
 namespace Stryker
 {
-
     public static class MutantControl
     {
         private static System.Collections.Generic.List<int> _coveredMutants = new System.Collections.Generic.List<int>();
@@ -18,17 +17,15 @@ namespace Stryker
         public static int ActiveMutant = -2;
         public static int Previous = -2;
         public const int ActiveMutantNotInitValue = -2;
-        private static string _pathToListenActiveMutation = "";
+        private static string _pathToListenActiveMutation => Path.Combine(Environment.GetEnvironmentVariable("ActiveMutationPath"), typeof(MutantControl).Namespace + ".txt");
 
         public static void InitCoverage()
         {
             ResetCoverage();
-            _pathToListenActiveMutation = Path.Combine(Environment.GetEnvironmentVariable("ActiveMutationPath"), typeof(MutantControl).Namespace + ".txt");
         }
 
         public static void ResetCoverage()
         {
-            _pathToListenActiveMutation = "";
             _coveredMutants = new System.Collections.Generic.List<int>();
             _coveredStaticMutants = new System.Collections.Generic.List<int>();
         }
@@ -54,35 +51,18 @@ namespace Stryker
                 RegisterCoverage(id);
                 return false;
             }
-
-
-            ActiveMutant = int.Parse(File.ReadAllText(_pathToListenActiveMutation));
-
-            if (ActiveMutant != Previous)
+            if (ActiveMutant == ActiveMutantNotInitValue)
             {
-#pragma warning disable CS8600
-                // get the environment variable storing the mutation id
-                string environmentVariableName = System.Environment.GetEnvironmentVariable("STRYKER_MUTANT_ID_CONTROL_VAR");
-                if (environmentVariableName != null)
+                if (File.Exists(_pathToListenActiveMutation))
                 {
-                    string environmentVariable = System.Environment.GetEnvironmentVariable(environmentVariableName);
-                    if (string.IsNullOrEmpty(environmentVariable))
-                    {
-                        ActiveMutant = -1;
-                    }
-                    else
-                    {
-                        ActiveMutant = int.Parse(environmentVariable);
-                    }
+                    ActiveMutant = int.Parse(File.ReadAllText(_pathToListenActiveMutation));
                 }
                 else
                 {
-                    ActiveMutant = -1;
-                }
 #if UNITY_EDITOR
-                UnityEngine.Debug.Log("[Stryker] ActiveMutation is " + int.Parse(File.ReadAllText(_pathToListenActiveMutation)));
+                    UnityEngine.Debug.Log("[Stryker] _pathToListenActiveMutation is " + _pathToListenActiveMutation + " but it doesn't exist.");
 #endif
-                Previous = ActiveMutant;
+                }
             }
 
             return id == ActiveMutant;
