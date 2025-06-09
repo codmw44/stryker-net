@@ -59,7 +59,7 @@ public class StrykerOptions : IStrykerOptions
     /// <summary>
     /// The full path of the solution file. Can be null.
     /// </summary>
-    public string SolutionPath { get; init; }
+    public string SolutionPath { get; set; }
 
     /// <summary>
     /// The configuration (in the VS sense) that should be used when building the project under test.

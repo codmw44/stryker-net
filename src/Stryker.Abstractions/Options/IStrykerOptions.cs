@@ -41,7 +41,7 @@ public interface IStrykerOptions
     ReportType? ReportTypeToOpen { get; init; }
     bool Since { get; init; }
     string SinceTarget { get; init; }
-    string SolutionPath { get; init; }
+    string SolutionPath { get; set; }
     string SourceProjectName { get; init; }
     string PathToUnity { get; init; }
     string TargetFramework { get; init; }

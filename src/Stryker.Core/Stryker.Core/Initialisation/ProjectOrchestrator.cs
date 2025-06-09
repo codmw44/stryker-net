@@ -10,6 +10,7 @@ using Mono.Cecil;
 using Stryker.Abstractions.Baseline;
 using Stryker.Abstractions.Exceptions;
 using Stryker.Abstractions.Options;
+using Stryker.Abstractions.Options.Inputs;
 using Stryker.Abstractions.Reporting;
 using Stryker.Abstractions.Testing;
 using Stryker.Core.MutationTest;
@@ -53,7 +54,9 @@ public sealed class ProjectOrchestrator : IProjectOrchestrator
         if (options.IsUnityProject())
         {
             _logger.LogInformation("Found Unity project. Run Unity project to generate sln and csproj files.");
+            //updating solution path required because Unity projects on the first launch has no .csproj or .sln. These files are under .gitignore and generates after Unity launch
             RunUnity.GetSingleInstance().ReloadDomain(options, options.ProjectPath);
+            options.SolutionPath = new SolutionInput().Validate(options.ProjectPath, new FileSystem());
         }
         var projectInfos = _initializationProcess.GetMutableProjectsInfo(options);
 
