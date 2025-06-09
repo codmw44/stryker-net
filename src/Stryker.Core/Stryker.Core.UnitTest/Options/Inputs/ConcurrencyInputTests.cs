@@ -32,7 +32,7 @@ Reasons you might want to lower this setting:
     {
         var target = new ConcurrencyInput { SuppliedInput = 0 };
 
-        var ex = Should.Throw<InputException>(() => target.Validate(_loggerMock.Object));
+        var ex = Should.Throw<InputException>(() => target.Validate(string.Empty, logger: _loggerMock.Object));
 
         ex.Message.ShouldBe("Concurrency must be at least 1.");
     }
@@ -44,7 +44,7 @@ Reasons you might want to lower this setting:
     [DataRow(128, LogLevel.Warning)]
     public void WhenGivenValueIsPassedAsMaxConcurrentTestRunnersParam_ExpectedValueShouldBeSet_ExpectedMessageShouldBeLogged(int concurrentTestRunners, LogLevel expectedLoglevel)
     {
-        var validatedInput = new ConcurrencyInput { SuppliedInput = concurrentTestRunners }.Validate(_loggerMock.Object);
+        var validatedInput = new ConcurrencyInput { SuppliedInput = concurrentTestRunners }.Validate(string.Empty, logger: _loggerMock.Object);
 
         validatedInput.ShouldBe(concurrentTestRunners);
 
@@ -64,7 +64,7 @@ Reasons you might want to lower this setting:
     [TestMethod]
     public void WhenGiven1ShouldPrintWarning()
     {
-        var validatedInput = new ConcurrencyInput { SuppliedInput = 1 }.Validate(_loggerMock.Object);
+        var validatedInput = new ConcurrencyInput { SuppliedInput = 1 }.Validate(string.Empty, logger: _loggerMock.Object);
 
         validatedInput.ShouldBe(1);
 
@@ -76,7 +76,7 @@ Reasons you might want to lower this setting:
     [TestMethod]
     public void WhenGivenNullShouldGetDefault()
     {
-        var validatedInput = new ConcurrencyInput().Validate(_loggerMock.Object);
+        var validatedInput = new ConcurrencyInput().Validate(string.Empty, logger: _loggerMock.Object);
 
         var safeProcessorCount = Math.Max(Environment.ProcessorCount / 2, 1);
 

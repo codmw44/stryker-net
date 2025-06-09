@@ -129,7 +129,7 @@ public class StrykerInputs : IStrykerInputs
             OutputPath = outputPath,
             PathToUnity = pathToUnity,
             ReportFileName = reportFileNameInput,
-            Concurrency = ConcurrencyInput.Validate(),
+            Concurrency = ConcurrencyInput.Validate(basePath),
             MutationLevel = MutationLevelInput.Validate(),
             DevMode = DevModeInput.Validate(),
             MsBuildPath = MsBuildPathInput.Validate(_fileSystem),

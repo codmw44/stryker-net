@@ -1,6 +1,7 @@
 using System;
 using Microsoft.Extensions.Logging;
 using Stryker.Abstractions.Exceptions;
+using Stryker.Core.Initialisation;
 using Stryker.Utilities.Logging;
 
 namespace Stryker.Abstractions.Options.Inputs;
@@ -17,12 +18,17 @@ Reasons you might want to lower this setting:
 
     public override int? Default => Math.Max(Environment.ProcessorCount / 2, 1);
 
-    public int Validate(ILogger<ConcurrencyInput> logger = null)
+    public int Validate(string basePath, ILogger<ConcurrencyInput> logger = null)
     {
         logger ??= ApplicationLogging.LoggerFactory.CreateLogger<ConcurrencyInput>();
 
         if (SuppliedInput is null)
         {
+            if (basePath.IsUnityProject())
+            {
+                logger.LogInformation("Using concurrency of 1 because it is a Unity project.");
+                return 1;
+            }
             if (Environment.ProcessorCount < 1)
             {
                 logger.LogWarning("Processor count is not reported by the system, using concurrency of 1. Set a concurrency to remove this warning.");
