@@ -13,22 +13,14 @@ using Stryker.TestRunner.VsTest;
 
 namespace Stryker.Core.TestRunners.UnityTestRunner;
 
-public class UnityTestRunner : ITestRunner
+public class UnityTestRunner(
+    IStrykerOptions strykerOptions,
+    ILogger logger,
+    IRunUnity runUnity) : ITestRunner
 {
-    private readonly ILogger _logger;
-    private readonly IRunUnity _runUnity;
-    private readonly IStrykerOptions _strykerOptions;
     private bool _firstMutationTestStarted;
     private TestRunResult _initialRunTestResult;
     private TestSet _testSet;
-
-    public UnityTestRunner(IStrykerOptions strykerOptions, ILogger logger,
-        IRunUnity runUnity)
-    {
-        _strykerOptions = strykerOptions;
-        _logger = logger;
-        _runUnity = runUnity;
-    }
 
     public bool DiscoverTests(string assembly)
     {
@@ -56,7 +48,7 @@ public class UnityTestRunner : ITestRunner
 
     public IEnumerable<ICoverageRunResult> CaptureCoverage(IProjectAndTests project) => [];
 
-    public void Dispose() => _runUnity.Dispose();
+    public void Dispose() => runUnity.Dispose();
 
     //todo remove all modifications
     //todo remove installed package
@@ -64,7 +56,7 @@ public class UnityTestRunner : ITestRunner
     {
         if (!_firstMutationTestStarted)
             //rerun unity to apply modifications and reload domain
-            _runUnity.ReloadDomain(_strykerOptions, _strykerOptions.WorkingDirectory);
+            runUnity.ReloadDomain(strykerOptions, strykerOptions.WorkingDirectory);
 
         var testResultsXml = RunTests(out var duration, mutants.Single().Id.ToString(), project.HelperNamespace);
 
@@ -75,7 +67,7 @@ public class UnityTestRunner : ITestRunner
 
         if (remainingMutants == false)
             // all mutants status have been resolved, we can stop
-            _logger.LogDebug("Each mutant's fate has been established, we can stop.");
+            logger.LogDebug("Each mutant's fate has been established, we can stop.");
 
         _firstMutationTestStarted = true;
 
@@ -87,7 +79,7 @@ public class UnityTestRunner : ITestRunner
     {
         var startTime = DateTime.UtcNow;
 
-        var xmlTestResults = _runUnity.RunTests(_strykerOptions, _strykerOptions.WorkingDirectory,
+        var xmlTestResults = runUnity.RunTests(strykerOptions, strykerOptions.WorkingDirectory,
             activeMutantId: activeMutantId, helperNamespace: helperNamespace);
 
         duration = DateTime.UtcNow - startTime;
