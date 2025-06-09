@@ -66,7 +66,7 @@ public sealed class ProjectOrchestrator : IProjectOrchestrator
             return [];
         }
 
-        if (!options.IsUnityProject())
+        if (!options.IsUnityProject()) //unity projects cannot be built out of Unity
             _initializationProcess.BuildProjects(options, projectInfos);
 
         // create a test runner

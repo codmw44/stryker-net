@@ -142,8 +142,7 @@ public class RunUnity : IRunUnity
 
         _unityProcessTask = Task.Run(() =>
         {
-            //todo use path to project from stykeroptions
-            var processResult = _processExecutor.Start(".", _unityPath.GetPath(strykerOptions),
+            var processResult = _processExecutor.Start(projectPath, _unityPath.GetPath(strykerOptions),
                 $"-logFile {pathToUnityLogFile} " + _currentUnityRunArguments);
             _logger.LogDebug("OpenUnity finished");
             _unityInProgress = false;

@@ -32,8 +32,6 @@ public class InitialUnityBuildProcess : IInitialBuildProcess
         {
             throw new InputException("Stryker could not build your project as no solution file was presented. Please pass the solution path to stryker.");
         }
-
-        //todo open unity project
         var msBuildHelper = new MsBuildHelper(executor: _processExecutor, msBuildPath: msbuildPath);
 
         _logger.LogDebug("Started initial build using dotnet build");
