@@ -4,7 +4,6 @@ using System.IO.Abstractions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
-using Stryker.Abstractions;
 using Stryker.Abstractions.Options;
 using Stryker.Core.Helpers.ProcessUtil;
 using Stryker.Core.TestRunners.UnityTestRunner.RunUnity.UnityPath;
@@ -12,13 +11,9 @@ using Stryker.Utilities.Logging;
 
 namespace Stryker.Core.TestRunners.UnityTestRunner.RunUnity;
 
-public class RunUnity : IRunUnity
+public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, ILogger logger) : IRunUnity
 {
     private const int TestFailedExitCode = 2;
-
-    private readonly IProcessExecutor _processExecutor;
-    private readonly IUnityPath _unityPath;
-    private readonly ILogger _logger;
 
     private static RunUnity instance;
     private bool _unityInProgress;
@@ -28,13 +23,6 @@ public class RunUnity : IRunUnity
     private string _pathToActiveMutantsListenFile;
     private Task _unityProcessTask;
 
-
-    public RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, ILogger logger)
-    {
-        _processExecutor = processExecutor;
-        _unityPath = unityPath;
-        _logger = logger;
-    }
 
     public static RunUnity GetSingleInstance(Func<IProcessExecutor> processExecutor = null,
         Func<IUnityPath> unityPath = null,
@@ -52,7 +40,7 @@ public class RunUnity : IRunUnity
 
     public void ReloadDomain(IStrykerOptions strykerOptions, string projectPath, string additionalArgumentsForCli = null)
     {
-        _logger.LogDebug("Request to reload domain");
+        logger.LogDebug("Request to reload domain");
 
         TryOpenUnity(strykerOptions, projectPath, additionalArgumentsForCli);
         SendCommandToUnity("reloadDomain");
@@ -63,7 +51,7 @@ public class RunUnity : IRunUnity
     public XDocument RunTests(IStrykerOptions strykerOptions, string projectPath,
         string additionalArgumentsForCli = null, string helperNamespace = null, string activeMutantId = null)
     {
-        _logger.LogDebug("Request to run tests Unity");
+        logger.LogDebug("Request to run tests Unity");
 
         TryOpenUnity(strykerOptions, projectPath, additionalArgumentsForCli);
 
@@ -73,7 +61,7 @@ public class RunUnity : IRunUnity
         var pathToActiveMutantForSpecificProject = Path.Combine(_pathToActiveMutantsListenFile, helperNamespace + ".txt");
         if(!string.IsNullOrEmpty(activeMutantId))
         {
-            _logger.LogDebug("Run tests for Mutant: {0} {1}", helperNamespace, activeMutantId);
+            logger.LogDebug("Run tests for Mutant: {0} {1}", helperNamespace, activeMutantId);
             File.WriteAllText(pathToActiveMutantForSpecificProject,  activeMutantId);
         }
 
@@ -108,13 +96,13 @@ public class RunUnity : IRunUnity
 
         if (_unityInProgress && _currentUnityRunArguments != GetArgumentsToRun(projectPath, additionalArgumentsForCli))
         {
-            _logger.LogError(
+            logger.LogError(
                 "Trying to run unity with other arguments when instance already opened. Waiting for closing the current one.");
             CloseUnity();
         }
         else if (_unityInProgress)
         {
-            _logger.LogDebug("Trying to run unity when instance already opened. Nothing to do");
+            logger.LogDebug("Trying to run unity when instance already opened. Nothing to do");
             return;
         }
 
@@ -124,7 +112,9 @@ public class RunUnity : IRunUnity
 
     private void OpenUnity(IStrykerOptions strykerOptions, string projectPath, string additionalArgumentsForCli = null)
     {
-        _logger.LogDebug("OpenUnity started");
+        logger.LogDebug("OpenUnity started");
+
+        CheckAndAddStrykerUnityPackage(projectPath);
 
         _unityInProgress = true;
 
@@ -142,9 +132,9 @@ public class RunUnity : IRunUnity
 
         _unityProcessTask = Task.Run(() =>
         {
-            var processResult = _processExecutor.Start(projectPath, _unityPath.GetPath(strykerOptions),
+            var processResult = processExecutor.Start(projectPath, unityPath.GetPath(strykerOptions),
                 $"-logFile {pathToUnityLogFile} " + _currentUnityRunArguments);
-            _logger.LogDebug("OpenUnity finished");
+            logger.LogDebug("OpenUnity finished");
             _unityInProgress = false;
 
             if (processResult.ExitCode != 0 && processResult.ExitCode != TestFailedExitCode)
@@ -182,7 +172,7 @@ public class RunUnity : IRunUnity
         {
             if (_unityProcessTask.Exception.GetBaseException() is UnityExecuteException unityEx && unityEx.ExitCode == 134)
             {
-                _logger.LogError("Another Unity process with this project is already running. Close Unity project and restart Stryker.");
+                logger.LogError("Another Unity process with this project is already running. Close Unity project and restart Stryker.");
                 throw unityEx;
             }
             throw _unityProcessTask.Exception;
@@ -193,13 +183,68 @@ public class RunUnity : IRunUnity
     {
         if (!_unityInProgress)
         {
-            _logger.LogDebug("Request to close Unity. Unity is not running. Do nothing");
+            logger.LogDebug("Request to close Unity. Unity is not running. Do nothing");
             return;
         }
 
-        _logger.LogDebug("Request to close Unity");
+        logger.LogDebug("Request to close Unity");
 
         SendCommandToUnity("exit");
         _unityProcessTask.GetAwaiter().GetResult();
     }
+
+    private void CheckAndAddStrykerUnityPackage(string projectPath)
+    {
+        var packagesManifestPath = Path.Combine(projectPath, "Packages", "manifest.json");
+
+        if (File.Exists(packagesManifestPath))
+        {
+            var manifestContent = File.ReadAllText(packagesManifestPath);
+
+            // Check if the com.stryker.unity package is already in the manifest
+            if (!manifestContent.Contains("\"com.stryker.unity\""))
+            {
+                logger.LogInformation("Adding com.stryker.unity package to Unity project");
+
+                // Determine where to insert the new package dependency
+                int insertPosition;
+                if (manifestContent.Contains("\"dependencies\": {"))
+                {
+                    insertPosition = manifestContent.IndexOf("\"dependencies\": {", StringComparison.Ordinal) + "\"dependencies\": {".Length;
+
+                    // Add the package to dependencies
+                    //todo replace it to https git
+                    var packageEntry =
+                        "\n    \"com.stryker.unity\": \"https://github.com/codmw44/stryker-net.git?path=src/Stryker.UnitySDK#feature/add_unity_support\",";
+
+                    // If there are already dependencies, add a comma to the new entry
+                    if (manifestContent.Substring(insertPosition).TrimStart().StartsWith("\""))
+                    {
+                        manifestContent = manifestContent.Insert(insertPosition, packageEntry);
+                    }
+                    else
+                    {
+                        manifestContent = manifestContent.Insert(insertPosition, packageEntry.TrimEnd(','));
+                    }
+
+                    File.WriteAllText(packagesManifestPath, manifestContent);
+                    logger.LogInformation("Successfully added com.stryker.unity package to Unity project");
+                }
+                else
+                {
+                    logger.LogWarning("Could not find dependencies section in manifest.json. Stryker package was not added.");
+                }
+            }
+            else
+            {
+                logger.LogDebug("com.stryker.unity package is already in the Unity project");
+            }
+        }
+        else
+        {
+            logger.LogWarning("Could not find manifest.json in Unity project at {0}", packagesManifestPath);
+        }
+
+    }
+
 }
