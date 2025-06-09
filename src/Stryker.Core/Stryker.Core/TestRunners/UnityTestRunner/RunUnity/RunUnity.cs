@@ -181,6 +181,11 @@ public class RunUnity : IRunUnity
     {
         if (_unityProcessTask?.Exception != null)
         {
+            if (_unityProcessTask.Exception.GetBaseException() is UnityExecuteException unityEx && unityEx.ExitCode == 134)
+            {
+                _logger.LogError("Another Unity process with this project is already running. Close Unity project and restart Stryker.");
+                throw unityEx;
+            }
             throw _unityProcessTask.Exception;
         }
     }
