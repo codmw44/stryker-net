@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using Buildalyzer;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -209,10 +210,20 @@ Generated source code may be missing.", analyzer);
     public static bool IsSignedAssembly(this IAnalyzerResult analyzerResult) =>
         analyzerResult.GetPropertyOrDefault("SignAssembly", false);
 
-    public static string GetAssemblyOriginatorKeyFile(this IAnalyzerResult analyzerResult)
+    public static bool IsDelayedSignedAssembly(this IAnalyzerResult analyzerResult) =>
+            analyzerResult.GetPropertyOrDefault("DelaySign", false);
+
+    public static string? GetAssemblyOriginatorKeyFile(this IAnalyzerResult analyzerResult)
     {
         var assemblyKeyFileProp = analyzerResult.GetPropertyOrDefault("AssemblyOriginatorKeyFile");
-        return assemblyKeyFileProp is null ? null : Path.Combine(Path.GetDirectoryName(analyzerResult.ProjectFilePath) ?? ".", assemblyKeyFileProp);
+        if (assemblyKeyFileProp is not null)
+        {
+            return Path.Combine(Path.GetDirectoryName(analyzerResult.ProjectFilePath) ?? ".", assemblyKeyFileProp);
+        }
+        else
+        {
+            return null;
+        }
     }
 
     public static ImmutableDictionary<string, ReportDiagnostic> GetDiagnosticOptions(
@@ -251,6 +262,7 @@ Generated source code may be missing.", analyzer);
 
         return diagnostics
             .Split(";")
+            .Select(x => x.Trim('\r', '\n', ' '))
             .Distinct()
             .Where(x => !string.IsNullOrWhiteSpace(x));
     }
@@ -261,8 +273,14 @@ Generated source code may be missing.", analyzer);
     public static string GetRootNamespace(this IAnalyzerResult analyzerResult) =>
         analyzerResult.GetPropertyOrDefault("RootNamespace") ?? analyzerResult.GetAssemblyName();
 
-    public static bool GetPropertyOrDefault(this IAnalyzerResult analyzerResult, string name, bool defaultBoolean) =>
-        bool.Parse(analyzerResult.GetPropertyOrDefault(name, defaultBoolean.ToString()));
+    public static bool GetPropertyOrDefault(this IAnalyzerResult analyzerResult, string name, bool defaultBoolean)
+    {
+        if (analyzerResult.Properties.TryGetValue(name, out var value) && !string.IsNullOrEmpty(value))
+        {
+            return bool.Parse(value);
+        }
+        return defaultBoolean;
+    }
 
     public static string GetPropertyOrDefault(this IAnalyzerResult analyzerResult, string name,
         string defaultValue = default) =>
