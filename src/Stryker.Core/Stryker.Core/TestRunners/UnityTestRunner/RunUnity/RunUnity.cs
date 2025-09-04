@@ -213,7 +213,7 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
                     insertPosition = manifestContent.IndexOf("\"dependencies\": {", StringComparison.Ordinal) + "\"dependencies\": {".Length;
 
                     // Add the package to dependencies
-                    //todo replace it to https git
+                    //todo replace it to https git and original repo
                     var packageEntry =
                         "\n    \"com.stryker.unity\": \"https://github.com/codmw44/stryker-net.git?path=src/Stryker.UnitySDK#feature/add_unity_support\",";
 
@@ -242,7 +242,7 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
         }
         else
         {
-            logger.LogWarning("Could not find manifest.json in Unity project at {0}", packagesManifestPath);
+            logger.LogError("Could not find manifest.json in Unity project at {0}", packagesManifestPath);
         }
 
     }

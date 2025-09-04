@@ -14,12 +14,16 @@ namespace Stryker.UnitySDK
 {
     public static class RunTests
 	{
-		public static bool TestsInProgress = false;
+        private static TestRunnerApi _testRunnerApi;
+        private static string _runnedPathToOutput;
+        public static bool TestsInProgress = false;
 
         [InitializeOnLoadMethod]
         public static void Run()
 		{
 			EditorCoroutine.Start(Coroutine());
+            _testRunnerApi = ScriptableObject.CreateInstance<TestRunnerApi>();
+            _testRunnerApi.RegisterCallbacks(new TestCallbacks(() => _runnedPathToOutput));
 		}
 
 		private static IEnumerator Coroutine()
@@ -31,10 +35,6 @@ namespace Stryker.UnitySDK
             {
                 yield break;
             }
-
-			string _runnedPathToOutput = string.Empty;
-			var testRunnerApi = ScriptableObject.CreateInstance<TestRunnerApi>();
-			testRunnerApi.RegisterCallbacks(new TestCallbacks(() => _runnedPathToOutput));
 
 			while (true)
 			{
@@ -63,9 +63,17 @@ namespace Stryker.UnitySDK
 					Console.WriteLine($"[Stryker][{DateTime.Now.ToLongTimeString()}] Got RequestToRunTests");
 					Console.WriteLine("[Stryker] Start testRunnerApi.Execute with path " + command);
 
-					var executionSettings = new ExecutionSettings(new Filter() { testMode = TestMode.EditMode });
-					testRunnerApi.Execute(executionSettings);
-					TestsInProgress = true;
+                    if (!EditorApplication.isPlaying)
+                    {
+                        var executionSettings = new ExecutionSettings(new Filter() { testMode = TestMode.PlayMode });
+                        _testRunnerApi.Execute(executionSettings);
+                        TestsInProgress = true;
+                    }
+                    else
+                    {
+                        //then play mode test is active.
+                        TestsInProgress = true;
+                    }
 
                     while (TestsInProgress)
                     {

@@ -6,7 +6,7 @@ namespace Stryker.Core.Initialisation;
 
 public static class UnityStrykerOptionsExtension
 {
-    public static bool IsUnityProject(this IStrykerOptions options)
+    public static bool IsUnityProject(this IStrykerOptions? options)
     {
         if (options == null)
             return false;
