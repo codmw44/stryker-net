@@ -1,0 +1,21 @@
+{
+  "name": "Hypemasters.TimeService.Tests",
+  "overrideReferences": true,
+  "precompiledReferences": [
+    "nunit.framework.dll",
+    "FluentAssertions.dll",
+    "NSubstitute.dll"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "references": [
+    "UnityEngine.TestRunner",
+    "UnityEditor.TestRunner",
+    "VContainer",
+    "Hypemasters.TimeService",
+    "Hypemasters.TimeService.Extensions",
+    "Hypemasters.DeviceInfo",
+    "Hypemasters.TimeService.Infrastructure"
+  ]
+}

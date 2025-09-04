@@ -1,0 +1,28 @@
+{
+  "name": "Hypemasters.Pooling.Tests",
+  "references": [
+    "UnityEngine.TestRunner",
+    "UnityEditor.TestRunner",
+    "Unity.Rider.Editor",
+    "Hypemasters.Pooling",
+    "Hypemasters.Logger.Abstraction",
+    "UniTask",
+    "VContainer"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": true,
+  "precompiledReferences": [
+    "nunit.framework.dll",
+    "NSubstitute.dll",
+    "FluentAssertions.dll",
+    "Microsoft.Extensions.Logging.Abstractions.dll"
+  ],
+  "autoReferenced": true,
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
