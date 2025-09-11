@@ -1,34 +1,36 @@
 using System;
 using System.Collections;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Xml;
 using UnityEditor;
 using UnityEditor.TestTools.TestRunner.Api;
 using UnityEngine;
-using UnityEngine.TestTools;
 
 namespace Stryker.UnitySDK
 {
     public static class RunTests
 	{
         private static TestRunnerApi _testRunnerApi;
-        private static string _runnedPathToOutput;
-        public static bool TestsInProgress = false;
+        private static string _runPathToOutput;
+
+        public static bool TestsInProgress
+        {
+            get => SessionState.GetBool("TestsInProgress", false);
+            set => SessionState.SetBool("TestsInProgress", value);
+        }
 
         [InitializeOnLoadMethod]
         public static void Run()
 		{
-			EditorCoroutine.Start(Coroutine());
             _testRunnerApi = ScriptableObject.CreateInstance<TestRunnerApi>();
-            _testRunnerApi.RegisterCallbacks(new TestCallbacks(() => _runnedPathToOutput));
+            _testRunnerApi.RegisterCallbacks(new TestCallbacks(() => _runPathToOutput));
+			EditorCoroutine.Start(Coroutine());
 		}
 
 		private static IEnumerator Coroutine()
 		{
-			Console.WriteLine("[Stryker] Run coroutine");
+			Log("Run coroutine");
 			var textFileToListen = Environment.GetEnvironmentVariable("Stryker.Unity.PathToListen");
 
             if (string.IsNullOrEmpty(textFileToListen) || !File.Exists(textFileToListen))
@@ -41,44 +43,73 @@ namespace Stryker.UnitySDK
                 var command = File.ReadAllText(textFileToListen);
 				if (command == "exit")
 				{
-					Console.WriteLine("[Stryker] Got exit. Close unity");
+                    Log("Got exit command. Close unity");
 
 					EditorApplication.Exit(0);
 					yield break;
 				}
                 if (command == "reloadDomain")
                 {
-                    Console.WriteLine($"[Stryker][{DateTime.Now.ToLongTimeString()}] Got reloadDomain");
+                    Log("Got reloadDomain command");
 
                     File.WriteAllText(textFileToListen, string.Empty);
 
                     EditorUtility.RequestScriptReload();
                     yield return new WaitForSeconds(0.1f);
-                    Console.WriteLine($"[Stryker][{DateTime.Now.ToLongTimeString()}] After RequestScriptReload");
+                    Log("After RequestScriptReload");
 
                 }
 				else if (!string.IsNullOrWhiteSpace(command))
 				{
-					_runnedPathToOutput = command;
-					Console.WriteLine($"[Stryker][{DateTime.Now.ToLongTimeString()}] Got RequestToRunTests");
-					Console.WriteLine("[Stryker] Start testRunnerApi.Execute with path " + command);
+                    Log("Got RequestToRunTests with command '" + command + "'");
 
-                    if (!EditorApplication.isPlaying)
+                    var commands = command.Split(" ");
+
+					_runPathToOutput = commands.LastOrDefault();
+                    var testMode = (commands.FirstOrDefault() ?? string.Empty).Contains("playmode") ? TestMode.PlayMode : TestMode.EditMode;
+                    string[] assemblyNames = null;
+                    if (commands.Length >= 3)
                     {
-                        var executionSettings = new ExecutionSettings(new Filter() { testMode = TestMode.PlayMode });
+                        assemblyNames = commands[1].Split(";");
+                    }
+
+                    if (EditorApplication.isPlaying && !TestsInProgress)
+                    {
+                        EditorApplication.ExitPlaymode();
+                        yield return new WaitForSeconds(0.1f);
+                    }
+
+                    if (!EditorApplication.isPlaying && TestsInProgress)
+                    {
+                        Log("playmode tests were finished and we need to save result. TODO RECHECK THAT RESULTS WERE SAVED");
+                        //then playmode tests were finished and we need to save result
+                        TestsInProgress = false;
+                    }
+                    else if (!EditorApplication.isPlaying)
+                    {
+                        Log("Start testRunnerApi.Execute with command '" + command + "'");
+
+                        var executionSettings = new ExecutionSettings(new Filter() { testMode = testMode, assemblyNames = assemblyNames});
                         _testRunnerApi.Execute(executionSettings);
+                        TestsInProgress = true;
+                    }
+                    else if(TestsInProgress)
+                    {
+                        Log("Playmode test is active");
+                        //then play mode test is active.
                         TestsInProgress = true;
                     }
                     else
                     {
-                        //then play mode test is active.
-                        TestsInProgress = true;
+                        Log("Unexpected state");
                     }
 
                     while (TestsInProgress)
                     {
                         yield return new WaitForSeconds(0.1f);
                     }
+
+                    Log("Clean command buffer");
                     File.WriteAllText(textFileToListen, string.Empty);
                 }
 				else
@@ -87,7 +118,9 @@ namespace Stryker.UnitySDK
 				}
 			}
 		}
-	}
+
+        public static void Log(string message) => Console.WriteLine($"[Stryker] [{DateTime.Now:HH:mm:ss.fff}] " + message);
+    }
 
 	public class EditorCoroutine
 	{
@@ -107,12 +140,12 @@ namespace Stryker.UnitySDK
 
 		private void Start()
 		{
-			UnityEditor.EditorApplication.update += Update;
+			EditorApplication.update += Update;
 		}
 
 		public void Stop()
 		{
-			UnityEditor.EditorApplication.update -= Update;
+			EditorApplication.update -= Update;
 		}
 
 		private void Update()
@@ -135,7 +168,8 @@ namespace Stryker.UnitySDK
 
 		public void RunStarted(ITestAdaptor testsToRun)
 		{
-			Console.WriteLine("[Stryker] Run started");
+            RunTests.Log("Tests run started");
+            RunTests.TestsInProgress = true;
 		}
 
 		public void RunFinished(ITestResultAdaptor result)
@@ -144,7 +178,7 @@ namespace Stryker.UnitySDK
 			{
 				Indent = true,
 			};
-			Console.WriteLine("[Stryker] Run finished");
+            RunTests.Log("Tests run finished");
 
 			var outputFileName = _getOutputFileName.Invoke();
 			using var writer = XmlWriter.Create(outputFileName, sts);
@@ -152,17 +186,20 @@ namespace Stryker.UnitySDK
 
 			result.ToXml().WriteTo(writer);
 			writer.WriteEndDocument();
-			Console.WriteLine("[Stryker] Run finished and was write at " + outputFileName);
+            RunTests.Log("Run finished and was write at " + outputFileName);
 
 			RunTests.TestsInProgress = false;
 		}
 
 		public void TestStarted(ITestAdaptor test)
 		{
+            RunTests.Log("Test started: " + test.FullName + " " + test.RunState);
 		}
 
 		public void TestFinished(ITestResultAdaptor result)
 		{
+            RunTests.Log("Test finished: " + result.FullName + " " + result.ResultState);
+
 		}
 	}
 }

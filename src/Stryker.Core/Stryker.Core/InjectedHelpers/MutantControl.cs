@@ -60,7 +60,8 @@ namespace Stryker
                 else
                 {
 #if UNITY_EDITOR
-                    UnityEngine.Debug.Log("[Stryker] _pathToListenActiveMutation is " + _pathToListenActiveMutation + " but it doesn't exist.");
+                    //todo required only for very deep debug
+                    //System.Console.WriteLine("[Stryker] _pathToListenActiveMutation is " + _pathToListenActiveMutation + " but it doesn't exist.");
 #endif
                 }
             }

@@ -43,7 +43,7 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
         logger.LogDebug("Request to reload domain");
 
         TryOpenUnity(strykerOptions, projectPath, additionalArgumentsForCli);
-        SendCommandToUnity("reloadDomain");
+        SendCommandToUnity_ReloadDomain();
         WaitUntilEndOfCommand();
         ThrowExceptionIfExists();
     }
@@ -65,7 +65,7 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
             File.WriteAllText(pathToActiveMutantForSpecificProject,  activeMutantId);
         }
 
-        SendCommandToUnity(pathToTestResultXml);
+        SendCommandToUnity_RunTests(pathToTestResultXml);
         WaitUntilEndOfCommand();
         ResetActiveMutant();
 
@@ -148,15 +148,12 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
         $"-batchmode -projectPath={projectPath} " +
         additionalArgumentsForCli;
 
-    private void SendCommandToUnity(string command)
-    {
-        File.WriteAllText(_pathToUnityListenFile, command);
-    }
+    private void SendCommandToUnity_ReloadDomain() => SendCommandToUnity("reloadDomain");
+    private void SendCommandToUnity_Exit() => SendCommandToUnity("exit");
+    private void SendCommandToUnity_RunTests(string pathToSaveTestResult) => SendCommandToUnity("playmode " + pathToSaveTestResult);
+    private void SendCommandToUnity(string command) => File.WriteAllText(_pathToUnityListenFile, command);
 
-    private void CleanupCommandBuffer()
-    {
-        File.WriteAllText(_pathToUnityListenFile, string.Empty);
-    }
+    private void CleanupCommandBuffer() => File.WriteAllText(_pathToUnityListenFile, string.Empty);
 
     private void WaitUntilEndOfCommand()
     {
@@ -189,7 +186,7 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
 
         logger.LogDebug("Request to close Unity");
 
-        SendCommandToUnity("exit");
+        SendCommandToUnity_Exit();
         _unityProcessTask.GetAwaiter().GetResult();
     }
 
