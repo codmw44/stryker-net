@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.IO.Abstractions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
@@ -14,10 +15,12 @@ namespace Stryker.Core.TestRunners.UnityTestRunner.RunUnity;
 public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, ILogger logger) : IRunUnity
 {
     private const int TestFailedExitCode = 2;
+    private const int PlaymodeTestRunsUntilUnityRestart = 20;
 
-    private static RunUnity instance;
+    private static RunUnity _instance;
     private bool _unityInProgress;
     private string _currentUnityRunArguments;
+    private int _playmodeTestRunsCount;
 
     private string _pathToUnityListenFile;
     private string _pathToActiveMutantsListenFile;
@@ -28,13 +31,13 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
         Func<IUnityPath> unityPath = null,
         Func<ILogger> logger = null)
     {
-        if (instance != null) return instance;
+        if (_instance != null) return _instance;
 
-        instance = new RunUnity(processExecutor?.Invoke() ?? new ProcessExecutor(),
+        _instance = new RunUnity(processExecutor?.Invoke() ?? new ProcessExecutor(),
             unityPath?.Invoke() ?? new UnityPath.UnityPath(new FileSystem()),
             logger?.Invoke() ?? ApplicationLogging.LoggerFactory.CreateLogger<RunUnity>());
 
-        return instance;
+        return _instance;
     }
 
 
@@ -52,6 +55,17 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
         string additionalArgumentsForCli = null, string helperNamespace = null, string activeMutantId = null)
     {
         logger.LogDebug("Request to run tests Unity");
+
+        _playmodeTestRunsCount++;
+
+        if (_playmodeTestRunsCount % PlaymodeTestRunsUntilUnityRestart == 0)
+        {
+            logger.LogInformation(
+                $"Close and open Unity to flush used memory and speed up process. Reach {_playmodeTestRunsCount} test runs. Restart configured after reach every {PlaymodeTestRunsUntilUnityRestart}");
+
+            SendCommandToUnity_Exit();
+            Thread.Sleep(TimeSpan.FromSeconds(1));
+        }
 
         TryOpenUnity(strykerOptions, projectPath, additionalArgumentsForCli);
 
