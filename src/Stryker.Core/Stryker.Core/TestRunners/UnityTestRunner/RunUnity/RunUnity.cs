@@ -1,7 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Abstractions;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
@@ -15,16 +15,16 @@ namespace Stryker.Core.TestRunners.UnityTestRunner.RunUnity;
 public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, ILogger logger) : IRunUnity
 {
     private const int TestFailedExitCode = 2;
-    private const int PlaymodeTestRunsUntilUnityRestart = 20;
+    private const long UnityMemoryConsumptionLimitInMb = 5000;
 
     private static RunUnity _instance;
     private bool _unityInProgress;
     private string _currentUnityRunArguments;
-    private int _playmodeTestRunsCount;
 
     private string _pathToUnityListenFile;
     private string _pathToActiveMutantsListenFile;
     private Task _unityProcessTask;
+    private Process _unityProcess;
 
 
     public static RunUnity GetSingleInstance(Func<IProcessExecutor> processExecutor = null,
@@ -56,15 +56,15 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
     {
         logger.LogDebug("Request to run tests Unity");
 
-        _playmodeTestRunsCount++;
-
-        if (_playmodeTestRunsCount % PlaymodeTestRunsUntilUnityRestart == 0)
+        _unityProcess?.Refresh();
+        var unityProcessWorkingSet64 = _unityProcess?.WorkingSet64 ?? 0;
+        logger.LogDebug($"Unity memory usage: {unityProcessWorkingSet64 / (1000 * 1000)} mb");
+        if (_unityInProgress && unityProcessWorkingSet64 >= 1000 * 1000 * UnityMemoryConsumptionLimitInMb)
         {
             logger.LogInformation(
-                $"Close and open Unity to flush used memory and speed up process. Reach {_playmodeTestRunsCount} test runs. Restart configured after reach every {PlaymodeTestRunsUntilUnityRestart}");
+                $"Close and reopen Unity to flush used memory and speed up process. Reached {unityProcessWorkingSet64 / (1000 * 1000)} mb. Restart configured after reaching {UnityMemoryConsumptionLimitInMb}");
 
-            SendCommandToUnity_Exit();
-            Thread.Sleep(TimeSpan.FromSeconds(1));
+            CloseUnity();
         }
 
         TryOpenUnity(strykerOptions, projectPath, additionalArgumentsForCli);
@@ -147,7 +147,7 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
         _unityProcessTask = Task.Run(() =>
         {
             var processResult = processExecutor.Start(projectPath, unityPath.GetPath(strykerOptions),
-                $"-logFile {pathToUnityLogFile} " + _currentUnityRunArguments);
+                $"-logFile {pathToUnityLogFile} " + _currentUnityRunArguments, ref _unityProcess);
             logger.LogDebug("OpenUnity finished");
             _unityInProgress = false;
 
