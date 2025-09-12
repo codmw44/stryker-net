@@ -15,7 +15,7 @@ namespace Stryker.Core.TestRunners.UnityTestRunner.RunUnity;
 public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, ILogger logger) : IRunUnity
 {
     private const int TestFailedExitCode = 2;
-    private const long UnityMemoryConsumptionLimitInMb = 5000;
+    private const long UnityMemoryConsumptionLimitInMb = 4000;
 
     private static RunUnity _instance;
     private bool _unityInProgress;
@@ -56,16 +56,7 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
     {
         logger.LogDebug("Request to run tests Unity");
 
-        _unityProcess?.Refresh();
-        var unityProcessWorkingSet64 = _unityProcess?.WorkingSet64 ?? 0;
-        logger.LogDebug($"Unity memory usage: {unityProcessWorkingSet64 / (1000 * 1000)} mb");
-        if (_unityInProgress && unityProcessWorkingSet64 >= 1000 * 1000 * UnityMemoryConsumptionLimitInMb)
-        {
-            logger.LogInformation(
-                $"Close and reopen Unity to flush used memory and speed up process. Reached {unityProcessWorkingSet64 / (1000 * 1000)} mb. Restart configured after reaching {UnityMemoryConsumptionLimitInMb}");
-
-            CloseUnity();
-        }
+        CheckMemoryUsageAndRestartIfOverThreshold();
 
         TryOpenUnity(strykerOptions, projectPath, additionalArgumentsForCli);
 
@@ -80,7 +71,19 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
         }
 
         SendCommandToUnity_RunTests(pathToTestResultXml);
-        WaitUntilEndOfCommand();
+
+        //WaitUntilEndOfCommand
+        while (!string.IsNullOrWhiteSpace(File.ReadAllText(_pathToUnityListenFile)))
+        {
+            ThrowExceptionIfExists();
+            var memoryOverUsed = CheckMemoryUsageAndRestartIfOverThreshold(); //some tests can go to infinitive loop and go allocate infinitive amount of memory and time
+            if (memoryOverUsed)
+            {
+                ResetActiveMutant();
+                return new XDocument(); //we cannot rerun tests, and unity doesn't detect timeout for them, so we just return empty result
+            }
+        }
+
         ResetActiveMutant();
 
         ThrowExceptionIfExists();
@@ -93,6 +96,22 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
             {
                 File.WriteAllText(pathToActiveMutantForSpecificProject, "-1");
             }
+        }
+
+        bool CheckMemoryUsageAndRestartIfOverThreshold()
+        {
+            _unityProcess?.Refresh();
+            var unityMemoryUsage = (_unityProcess?.WorkingSet64 ?? 0) / (1000 * 1000);
+            if (unityMemoryUsage >= UnityMemoryConsumptionLimitInMb)
+            {
+                logger.LogInformation(
+                    $"Close Unity to flush used memory and speed up process. Reached {unityMemoryUsage} mb. Restart configured after reaching {UnityMemoryConsumptionLimitInMb}");
+
+                KillUnity();
+                return true;
+            }
+
+            return false;
         }
     }
 
@@ -202,6 +221,19 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
 
         SendCommandToUnity_Exit();
         _unityProcessTask.GetAwaiter().GetResult();
+    }
+
+    private void KillUnity()
+    {
+        if (!_unityInProgress)
+        {
+            logger.LogDebug("Request to kill Unity. Unity is not running. Do nothing");
+            return;
+        }
+        logger.LogDebug("Request to kill Unity");
+
+        _unityProcess.KillTree(TimeSpan.FromSeconds(15));
+        // don't use this cause it would through exception because of kill _unityProcessTask.GetAwaiter().GetResult();
     }
 
     private void CheckAndAddStrykerUnityPackage(string projectPath)
