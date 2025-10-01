@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Abstractions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
@@ -25,7 +26,6 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
     private string _pathToActiveMutantsListenFile;
     private Task _unityProcessTask;
     private Process _unityProcess;
-
 
     public static RunUnity GetSingleInstance(Func<IProcessExecutor> processExecutor = null,
         Func<IUnityPath> unityPath = null,
@@ -56,8 +56,6 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
     {
         logger.LogDebug("Request to run tests Unity");
 
-        CheckMemoryUsageAndRestartIfOverThreshold();
-
         TryOpenUnity(strykerOptions, projectPath, additionalArgumentsForCli);
 
         var pathToTestResultXml =
@@ -76,7 +74,7 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
         while (!string.IsNullOrWhiteSpace(File.ReadAllText(_pathToUnityListenFile)))
         {
             ThrowExceptionIfExists();
-            var memoryOverUsed = CheckMemoryUsageAndRestartIfOverThreshold(); //some tests can go to infinitive loop and go allocate infinitive amount of memory and time
+            var memoryOverUsed = CheckMemoryUsageAndRestartIfOverThreshold(); //some tests can go to infinitive loop and go allocate infinitive amount of memory and time. And Unity tests doesn't catch this
             if (memoryOverUsed)
             {
                 ResetActiveMutant();
@@ -100,18 +98,33 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
 
         bool CheckMemoryUsageAndRestartIfOverThreshold()
         {
-            _unityProcess?.Refresh();
-            var unityMemoryUsage = (_unityProcess?.WorkingSet64 ?? 0) / (1000 * 1000);
-            if (unityMemoryUsage >= UnityMemoryConsumptionLimitInMb)
+            try
             {
-                logger.LogInformation(
-                    $"Close Unity to flush used memory and speed up process. Reached {unityMemoryUsage} mb. Restart configured after reaching {UnityMemoryConsumptionLimitInMb}");
+                _unityProcess?.Refresh();
 
-                KillUnity();
-                return true;
+                // Check if process has exited before accessing WorkingSet64
+                if (_unityProcess == null || _unityProcess.HasExited)
+                {
+                    return false;
+                }
+
+                var unityMemoryUsage = _unityProcess.WorkingSet64 / (1000 * 1000);
+                if (unityMemoryUsage >= UnityMemoryConsumptionLimitInMb)
+                {
+                    logger.LogInformation(
+                        $"Close Unity to flush used memory probably mutant lead to infinitive cycle. Reached {unityMemoryUsage} mb. Restart configured after reaching {UnityMemoryConsumptionLimitInMb}");
+
+                    KillUnity();
+                    return true;
+                }
+
+                return false;
             }
-
-            return false;
+            catch (InvalidOperationException)
+            {
+                logger.LogDebug("Unity process is no longer accessible during memory check");
+                return false;
+            }
         }
     }
 
@@ -232,8 +245,18 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
         }
         logger.LogDebug("Request to kill Unity");
 
-        _unityProcess.KillTree(TimeSpan.FromSeconds(15));
-        // don't use this cause it would through exception because of kill _unityProcessTask.GetAwaiter().GetResult();
+        _unityProcess.Kill(true);
+        Thread.Sleep(10_000); //wait to kill the app
+        try
+        {
+            _unityProcessTask.GetAwaiter().GetResult();
+        }
+        catch (Exception)
+        {
+            //ignore exception
+        }
+        _unityProcess = null;
+        _unityProcessTask = null;
     }
 
     private void CheckAndAddStrykerUnityPackage(string projectPath)
