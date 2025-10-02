@@ -4,15 +4,18 @@ using System.IO;
 using System.Linq;
 using System.Xml;
 using UnityEditor;
+using UnityEditor.TestTools.CodeCoverage;
 using UnityEditor.TestTools.TestRunner.Api;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace Stryker.UnitySDK
 {
     public static class RunTests
-	{
+    {
         private static TestRunnerApi _testRunnerApi;
         private static string _runPathToOutput;
+        public static string _coverageOutputPath;
 
         public static bool TestsInProgress
         {
@@ -20,34 +23,41 @@ namespace Stryker.UnitySDK
             set => SessionState.SetBool("TestsInProgress", value);
         }
 
+        public static bool CodeCoverageEnabled
+        {
+            get => SessionState.GetBool("CodeCoverageEnabled", false);
+            set => SessionState.SetBool("CodeCoverageEnabled", value);
+        }
+
         [InitializeOnLoadMethod]
         public static void Run()
-		{
+        {
             _testRunnerApi = ScriptableObject.CreateInstance<TestRunnerApi>();
             _testRunnerApi.RegisterCallbacks(new TestCallbacks(() => _runPathToOutput));
-			EditorCoroutine.Start(Coroutine());
-		}
+            EditorCoroutine.Start(Coroutine());
+        }
 
-		private static IEnumerator Coroutine()
-		{
-			Log("Run coroutine");
-			var textFileToListen = Environment.GetEnvironmentVariable("Stryker.Unity.PathToListen");
+        private static IEnumerator Coroutine()
+        {
+            Log("Run coroutine");
+            var textFileToListen = Environment.GetEnvironmentVariable("Stryker.Unity.PathToListen");
 
             if (string.IsNullOrEmpty(textFileToListen) || !File.Exists(textFileToListen))
             {
                 yield break;
             }
 
-			while (true)
-			{
+            while (true)
+            {
                 var command = File.ReadAllText(textFileToListen);
-				if (command == "exit")
-				{
+                if (command == "exit")
+                {
                     Log("Got exit command. Close unity");
 
-					EditorApplication.Exit(0);
-					yield break;
-				}
+                    EditorApplication.Exit(0);
+                    yield break;
+                }
+
                 if (command == "reloadDomain")
                 {
                     Log("Got reloadDomain command");
@@ -68,9 +78,40 @@ namespace Stryker.UnitySDK
 					_runPathToOutput = commands.LastOrDefault();
                     var testMode = (commands.FirstOrDefault() ?? string.Empty).Contains("playmode") ? TestMode.PlayMode : TestMode.EditMode;
                     string[] assemblyNames = null;
+                    var enableCoverage = false;
+
                     if (commands.Length >= 3)
                     {
                         assemblyNames = commands[1].Split(";");
+                    }
+
+                    // Check if coverage is enabled via environment variable
+                    var coverageEnabled = Environment.GetEnvironmentVariable("Stryker.Unity.EnableCoverage");
+                    enableCoverage = !string.IsNullOrEmpty(coverageEnabled) && coverageEnabled.ToLower() == "true";
+
+                    if (enableCoverage)
+                    {
+                        CodeCoverageEnabled = true;
+                        _coverageOutputPath = Path.Combine(Path.GetDirectoryName(_runPathToOutput), "coverage");
+                        // Ensure the directory exists
+                        if (!Directory.Exists(_coverageOutputPath))
+                        {
+                            Directory.CreateDirectory(_coverageOutputPath);
+                        }
+
+                        // new UnityEditor.SettingsManagement.
+                        // Configure coverage using EditorPrefs (the way the package stores settings)
+                        EditorPrefs.SetInt("CodeCoverage_ResultsPathType", 1); // 1 = Custom path
+                        EditorPrefs.SetString("CodeCoverage_ResultsPath", _coverageOutputPath);
+                        EditorPrefs.SetBool("CodeCoverage_GenerateHTMLReport", false);
+                        EditorPrefs.SetBool("CodeCoverage_GenerateBadge", false);
+                        EditorPrefs.SetBool("CodeCoverage_GenerateAdditionalMetrics", true);
+
+                        Coverage.ResetAll();
+                        Coverage.enabled = true;
+                        CodeCoverage.StartRecording();
+
+                        Log("Code coverage enabled, results will be saved to: " + _coverageOutputPath);
                     }
 
                     if (EditorApplication.isPlaying && !TestsInProgress)
@@ -89,11 +130,11 @@ namespace Stryker.UnitySDK
                     {
                         Log("Start testRunnerApi.Execute with command '" + command + "'");
 
-                        var executionSettings = new ExecutionSettings(new Filter() { testMode = testMode, assemblyNames = assemblyNames});
+                        var executionSettings = new ExecutionSettings(new Filter() { testMode = testMode, assemblyNames = assemblyNames });
                         _testRunnerApi.Execute(executionSettings);
                         TestsInProgress = true;
                     }
-                    else if(TestsInProgress)
+                    else if (TestsInProgress)
                     {
                         Log("Playmode test is active");
                         //then play mode test is active.
@@ -122,7 +163,7 @@ namespace Stryker.UnitySDK
         public static void Log(string message) => Console.WriteLine($"[Stryker] [{DateTime.Now:HH:mm:ss.fff}] " + message);
     }
 
-	public class EditorCoroutine
+    public class EditorCoroutine
 	{
 		private IEnumerator routine;
 
@@ -189,6 +230,9 @@ namespace Stryker.UnitySDK
             RunTests.Log("Run finished and was write at " + outputFileName);
 
 			RunTests.TestsInProgress = false;
+            Coverage.enabled = false;
+            CodeCoverage.StopRecording();
+
 		}
 
 		public void TestStarted(ITestAdaptor test)

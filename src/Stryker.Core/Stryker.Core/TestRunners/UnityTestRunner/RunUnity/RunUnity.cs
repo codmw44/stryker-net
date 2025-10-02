@@ -171,6 +171,14 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
         _pathToActiveMutantsListenFile = strykerOptions.OutputPath;
         Environment.SetEnvironmentVariable("ActiveMutationPath", _pathToActiveMutantsListenFile);
 
+        // Enable Unity code coverage if optimization mode includes coverage analysis
+        if (strykerOptions.OptimizationMode.HasFlag(OptimizationModes.CaptureCoveragePerTest) ||
+            strykerOptions.OptimizationMode.HasFlag(OptimizationModes.CoverageBasedTest))
+        {
+            Environment.SetEnvironmentVariable("Stryker.Unity.EnableCoverage", "true");
+            logger.LogDebug("Unity code coverage enabled");
+        }
+
         CleanupCommandBuffer();
 
         var pathToUnityLogFile =
@@ -181,7 +189,8 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
         _unityProcessTask = Task.Run(() =>
         {
             var processResult = processExecutor.Start(projectPath, unityPath.GetPath(strykerOptions),
-                $"-logFile {pathToUnityLogFile} " + _currentUnityRunArguments, ref _unityProcess);
+                $"-debugCodeOptimization -logFile {pathToUnityLogFile} " + _currentUnityRunArguments, ref _unityProcess);
+            //-debugCodeOptimization required for code coverage to work
             logger.LogDebug("OpenUnity finished");
             _unityInProgress = false;
 

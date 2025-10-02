@@ -1,6 +1,10 @@
 {
     "name": "Stryker",
     "rootNamespace": "Stryker.UnitySDK",
+    "references": [
+        "Unity.TestTools.CodeCoverage.Editor",
+        "Unity.Settings.Editor"
+    ],
     "includePlatforms": [
         "Editor"
     ]

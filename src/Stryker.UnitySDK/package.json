@@ -5,5 +5,8 @@
   "description": "Plugin for Unity to able run Stryker with Unity projects",
   "keywords": [
     "stryker"
-  ]
+  ],
+  "dependencies": {
+    "com.unity.testtools.codecoverage": "1.2.7"
+  }
 }
