@@ -194,6 +194,7 @@ public class CommandLineConfigReader
         AddCliInput(inputs.TargetFrameworkInput, "target-framework", null, optionType: CommandOptionType.SingleValue, category: InputCategory.Build);
         AddCliInput(inputs.PathToUnityInput, "path-to-unity", null, category: InputCategory.Build);
         AddCliInput(inputs.UnityMemoryConsumptionLimitInMbInput, "unity-memory-limit", null, argumentHint: "megabytes", category: InputCategory.Build);
+        AddCliInput(inputs.UnityTestModeInput, "unity-test-mode", null, argumentHint: "All,PlayMode,EditMode", category: InputCategory.Build);
 
         // Category: Mutation
         AddCliInput(inputs.MutateInput, "mutate", "m", CommandOptionType.MultipleValue, argumentHint: "glob-pattern", category: InputCategory.Mutation);

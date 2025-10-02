@@ -60,9 +60,6 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
 
         TryOpenUnity(strykerOptions, projectPath, additionalArgumentsForCli);
 
-        var pathToTestResultXml =
-            Path.Combine(strykerOptions.OutputPath, $"test_results_{DateTime.Now.ToFileTime()}.xml");
-
         var pathToActiveMutantForSpecificProject = Path.Combine(_pathToActiveMutantsListenFile, helperNamespace + ".txt");
         if(!string.IsNullOrEmpty(activeMutantId))
         {
@@ -70,25 +67,71 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
             File.WriteAllText(pathToActiveMutantForSpecificProject,  activeMutantId);
         }
 
-        SendCommandToUnity_RunTests(pathToTestResultXml);
+        var combinedResults = new XDocument(new XElement("TestRun"));
 
-        //WaitUntilEndOfCommand
-        while (!string.IsNullOrWhiteSpace(File.ReadAllText(_pathToUnityListenFile)))
+        switch (strykerOptions.UnityTestMode)
         {
-            ThrowExceptionIfExists();
-            var memoryOverUsed = CheckMemoryUsageAndRestartIfOverThreshold(); //some tests can go to infinitive loop and go allocate infinitive amount of memory and time. And Unity tests doesn't catch this
-            if (memoryOverUsed)
-            {
-                ResetActiveMutant();
-                return new XDocument(); //we cannot rerun tests, and unity doesn't detect timeout for them, so we just return empty result
-            }
+            case UnityTestMode.All:
+
+                var editModeResults = RunTestsForMode(UnityTestMode.EditMode, strykerOptions, helperNamespace, activeMutantId);
+                if (editModeResults != null && editModeResults.Root != null)
+                {
+                    combinedResults.Root.Add(editModeResults.Root.Elements());
+                }
+
+                var playModeResults = RunTestsForMode(UnityTestMode.PlayMode, strykerOptions, helperNamespace, activeMutantId);
+                if (playModeResults != null && playModeResults.Root != null)
+                {
+                    combinedResults.Root.Add(playModeResults.Root.Elements());
+                }
+                break;
+
+            case UnityTestMode.PlayMode:
+            case UnityTestMode.EditMode:
+                var playModeOnlyResults = RunTestsForMode(strykerOptions.UnityTestMode, strykerOptions, helperNamespace, activeMutantId);
+                if (playModeOnlyResults != null && playModeOnlyResults.Root != null)
+                {
+                    combinedResults.Root.Add(playModeOnlyResults.Root.Elements());
+                }
+                break;
         }
 
         ResetActiveMutant();
-
         ThrowExceptionIfExists();
 
-        return XDocument.Load(pathToTestResultXml);
+        return combinedResults;
+
+        XDocument RunTestsForMode(UnityTestMode testMode, IStrykerOptions strykerOptions, string helperNamespace, string activeMutantId)
+        {
+            logger.LogDebug("Running Unity tests in {0} mode", testMode);
+
+            var pathToTestResultXml =
+                Path.Combine(strykerOptions.OutputPath, $"test_results_{testMode.ToString().ToLowerInvariant()}_{DateTime.Now.ToFileTime()}.xml");
+
+            SendCommandToUnity_RunTests(testMode, pathToTestResultXml);
+
+            //WaitUntilEndOfCommand
+            while (!string.IsNullOrWhiteSpace(File.ReadAllText(_pathToUnityListenFile)))
+            {
+                ThrowExceptionIfExists();
+                var memoryOverUsed = CheckMemoryUsageAndRestartIfOverThreshold(); //some tests can go to infinitive loop and go allocate infinitive amount of memory and time. And Unity tests doesn't catch this
+                if (memoryOverUsed)
+                {
+                    return new XDocument(); //we cannot rerun tests, and unity doesn't detect timeout for them, so we just return empty result
+                }
+            }
+
+            ThrowExceptionIfExists();
+
+            if (File.Exists(pathToTestResultXml))
+            {
+                return XDocument.Load(pathToTestResultXml);
+            }
+            else
+            {
+                return new XDocument();
+            }
+        }
 
         void ResetActiveMutant()
         {
@@ -198,7 +241,7 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
 
     private void SendCommandToUnity_ReloadDomain() => SendCommandToUnity("reloadDomain");
     private void SendCommandToUnity_Exit() => SendCommandToUnity("exit");
-    private void SendCommandToUnity_RunTests(string pathToSaveTestResult) => SendCommandToUnity("playmode " + pathToSaveTestResult);
+    private void SendCommandToUnity_RunTests(UnityTestMode testMode, string pathToSaveTestResult) => SendCommandToUnity($"{testMode.ToString().ToLowerInvariant()} {pathToSaveTestResult}");
     private void SendCommandToUnity(string command) => File.WriteAllText(_pathToUnityListenFile, command);
 
     private void CleanupCommandBuffer() => File.WriteAllText(_pathToUnityListenFile, string.Empty);
@@ -319,6 +362,7 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
     {
         var scriptAssembliesPath = Path.Combine(projectPath, "Library", "ScriptAssemblies");
 
+        return;
         if (Directory.Exists(scriptAssembliesPath))
         {
             try

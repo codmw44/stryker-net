@@ -45,6 +45,7 @@ public interface IStrykerOptions
     string SourceProjectName { get; init; }
     string PathToUnity { get; init; }
     int UnityMemoryConsumptionLimitInMb { get; init; }
+    UnityTestMode UnityTestMode { get; init; }
     string TargetFramework { get; init; }
     string TestCaseFilter { get; init; }
     IEnumerable<string> TestProjects { get; init; }

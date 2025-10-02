@@ -87,7 +87,7 @@ namespace Stryker.UnitySDK
                     }
                     else if (!EditorApplication.isPlaying)
                     {
-                        Log("Start testRunnerApi.Execute with command '" + command + "'");
+                        Log("Start testRunnerApi.Execute of command '" + command + "'" + $" with executionSettings: testMode {testMode} assemblyNames {assemblyNames}");
 
                         var executionSettings = new ExecutionSettings(new Filter() { testMode = testMode, assemblyNames = assemblyNames});
                         _testRunnerApi.Execute(executionSettings);

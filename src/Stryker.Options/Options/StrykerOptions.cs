@@ -79,6 +79,11 @@ public class StrykerOptions : IStrykerOptions
     public int UnityMemoryConsumptionLimitInMb { get; init; }
 
     /// <summary>
+    /// Unity test mode to run: All (runs both EditMode and PlayMode in sequence), PlayMode, or EditMode
+    /// </summary>
+    public UnityTestMode UnityTestMode { get; init; }
+
+    /// <summary>
     /// The options passed to all logging systems
     /// </summary>
     public ILogOptions LogOptions { get; init; }
