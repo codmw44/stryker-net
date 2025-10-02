@@ -11,4 +11,6 @@ public interface IRunUnity : IDisposable
 
     XDocument RunTests(IStrykerOptions strykerOptions, string projectPath,
         string additionalArgumentsForCli = null, string helperNamespace = null, string activeMutantId = null);
+
+    void RemoveScriptAssembliesDirectory(string projectPath);
 }

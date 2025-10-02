@@ -315,4 +315,27 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
 
     }
 
+    public void RemoveScriptAssembliesDirectory(string projectPath)
+    {
+        var scriptAssembliesPath = Path.Combine(projectPath, "Library", "ScriptAssemblies");
+
+        if (Directory.Exists(scriptAssembliesPath))
+        {
+            try
+            {
+                Directory.Delete(scriptAssembliesPath, true);
+                Directory.CreateDirectory(scriptAssembliesPath);
+                logger.LogInformation("Successfully removed Library/ScriptAssemblies directory");
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to remove Library/ScriptAssemblies directory: {0}", scriptAssembliesPath);
+            }
+        }
+        else
+        {
+            logger.LogDebug("Library/ScriptAssemblies directory does not exist: {0}", scriptAssembliesPath);
+        }
+    }
+
 }

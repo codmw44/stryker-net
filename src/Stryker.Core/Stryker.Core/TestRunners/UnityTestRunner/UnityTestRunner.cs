@@ -26,6 +26,9 @@ public class UnityTestRunner(
     {
         if (_testSet != null) return true;
 
+        //Required to have fresh not modified dlls
+        runUnity.RemoveScriptAssembliesDirectory(strykerOptions.WorkingDirectory);
+
         var testResultsXml = RunTests(out var duration);
 
         //todo add valid test file path. It used for checking diff by git and ut of the box dont provides in xml
@@ -48,7 +51,12 @@ public class UnityTestRunner(
 
     public IEnumerable<ICoverageRunResult> CaptureCoverage(IProjectAndTests project) => [];
 
-    public void Dispose() => runUnity.Dispose();
+    public void Dispose()
+    {
+        // Required to avoid not relevant experience for the developer when open the project after Stryker run
+        runUnity.RemoveScriptAssembliesDirectory(strykerOptions.WorkingDirectory);
+        runUnity.Dispose();
+    }
 
     //todo remove all modifications
     //todo remove installed package
