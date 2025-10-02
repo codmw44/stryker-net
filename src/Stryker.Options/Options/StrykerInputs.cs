@@ -41,6 +41,7 @@ public interface IStrykerInputs
     SolutionInput SolutionInput { get; init; }
     TargetFrameworkInput TargetFrameworkInput { get; init; }
     PathToUnityInput PathToUnityInput { get; init; }
+    UnityMemoryConsumptionLimitInMbInput UnityMemoryConsumptionLimitInMbInput { get; init; }
     TestProjectsInput TestProjectsInput { get; init; }
     TestCaseFilterInput TestCaseFilterInput { get; init; }
     ThresholdBreakInput ThresholdBreakInput { get; init; }
@@ -107,6 +108,7 @@ public class StrykerInputs : IStrykerInputs
     public MsBuildPathInput MsBuildPathInput { get; init; } = new();
     public OpenReportInput OpenReportInput { get; init; } = new();
     public PathToUnityInput PathToUnityInput { get; init; } = new();
+    public UnityMemoryConsumptionLimitInMbInput UnityMemoryConsumptionLimitInMbInput { get; init; } = new();
     public OpenReportEnabledInput OpenReportEnabledInput { get; init; } = new();
     public BreakOnInitialTestFailureInput BreakOnInitialTestFailureInput { get; init; } = new();
 
@@ -115,6 +117,7 @@ public class StrykerInputs : IStrykerInputs
         var basePath = BasePathInput.Validate(_fileSystem);
         var outputPath = OutputPathInput.Validate(_fileSystem);
         var pathToUnity = PathToUnityInput.Validate();
+        var unityMemoryConsumptionLimitInMb = UnityMemoryConsumptionLimitInMbInput.Validate();
         var reportFileNameInput = ReportFileNameInput.Validate();
         var withBaseline = WithBaselineInput.Validate();
         var reporters = ReportersInput.Validate(withBaseline);
@@ -128,6 +131,7 @@ public class StrykerInputs : IStrykerInputs
             ProjectPath = basePath,
             OutputPath = outputPath,
             PathToUnity = pathToUnity,
+            UnityMemoryConsumptionLimitInMb = unityMemoryConsumptionLimitInMb,
             ReportFileName = reportFileNameInput,
             Concurrency = ConcurrencyInput.Validate(basePath),
             MutationLevel = MutationLevelInput.Validate(),

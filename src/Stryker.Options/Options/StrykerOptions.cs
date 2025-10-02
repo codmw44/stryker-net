@@ -74,6 +74,11 @@ public class StrykerOptions : IStrykerOptions
     public string PathToUnity { get; init; }
 
     /// <summary>
+    /// Maximum memory consumption limit in MB for Unity process before restart
+    /// </summary>
+    public int UnityMemoryConsumptionLimitInMb { get; init; }
+
+    /// <summary>
     /// The options passed to all logging systems
     /// </summary>
     public ILogOptions LogOptions { get; init; }

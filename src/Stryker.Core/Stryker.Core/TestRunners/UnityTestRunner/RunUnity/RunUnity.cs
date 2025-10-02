@@ -16,11 +16,11 @@ namespace Stryker.Core.TestRunners.UnityTestRunner.RunUnity;
 public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, ILogger logger) : IRunUnity
 {
     private const int TestFailedExitCode = 2;
-    private const long UnityMemoryConsumptionLimitInMb = 4000;
 
     private static RunUnity _instance;
     private bool _unityInProgress;
     private string _currentUnityRunArguments;
+    private long _unityMemoryConsumptionLimitInMb;
 
     private string _pathToUnityListenFile;
     private string _pathToActiveMutantsListenFile;
@@ -44,6 +44,7 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
     public void ReloadDomain(IStrykerOptions strykerOptions, string projectPath, string additionalArgumentsForCli = null)
     {
         logger.LogDebug("Request to reload domain");
+        _unityMemoryConsumptionLimitInMb = strykerOptions.UnityMemoryConsumptionLimitInMb;
 
         TryOpenUnity(strykerOptions, projectPath, additionalArgumentsForCli);
         SendCommandToUnity_ReloadDomain();
@@ -55,6 +56,7 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
         string additionalArgumentsForCli = null, string helperNamespace = null, string activeMutantId = null)
     {
         logger.LogDebug("Request to run tests Unity");
+        _unityMemoryConsumptionLimitInMb = strykerOptions.UnityMemoryConsumptionLimitInMb;
 
         TryOpenUnity(strykerOptions, projectPath, additionalArgumentsForCli);
 
@@ -109,10 +111,10 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
                 }
 
                 var unityMemoryUsage = _unityProcess.WorkingSet64 / (1000 * 1000);
-                if (unityMemoryUsage >= UnityMemoryConsumptionLimitInMb)
+                if (unityMemoryUsage >= _unityMemoryConsumptionLimitInMb)
                 {
                     logger.LogInformation(
-                        $"Close Unity to flush used memory probably mutant lead to infinitive cycle. Reached {unityMemoryUsage} mb. Restart configured after reaching {UnityMemoryConsumptionLimitInMb}");
+                        $"Close Unity to flush used memory probably mutant lead to infinitive cycle. Reached {unityMemoryUsage} mb. Restart configured after reaching {_unityMemoryConsumptionLimitInMb}");
 
                     KillUnity();
                     return true;
