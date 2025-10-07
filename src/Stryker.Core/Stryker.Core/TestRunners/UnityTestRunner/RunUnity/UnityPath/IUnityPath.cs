@@ -1,4 +1,3 @@
-using Stryker.Abstractions;
 using Stryker.Abstractions.Options;
 
 namespace Stryker.Core.TestRunners.UnityTestRunner.RunUnity.UnityPath;

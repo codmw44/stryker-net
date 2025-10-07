@@ -236,7 +236,7 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
     }
 
     private string GetArgumentsToRun(string projectPath, string additionalArgumentsForCli = null) =>
-        $"-batchmode -projectPath={projectPath} " +
+        $"-batchmode -projectPath {projectPath} " +
         additionalArgumentsForCli;
 
     private void SendCommandToUnity_ReloadDomain() => SendCommandToUnity("reloadDomain");

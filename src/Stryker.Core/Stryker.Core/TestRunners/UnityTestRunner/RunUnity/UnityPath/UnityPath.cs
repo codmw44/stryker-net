@@ -6,15 +6,8 @@ using Stryker.Abstractions.Options;
 
 namespace Stryker.Core.TestRunners.UnityTestRunner.RunUnity.UnityPath;
 
-public class UnityPath : IUnityPath
+public class UnityPath(IFileSystem fileSystem) : IUnityPath
 {
-    private readonly IFileSystem _fileSystem;
-
-    public UnityPath(IFileSystem fileSystem)
-    {
-        _fileSystem = fileSystem;
-    }
-
     public string GetPath(IStrykerOptions options)
     {
         if (!string.IsNullOrEmpty(options.PathToUnity))
@@ -57,13 +50,13 @@ public class UnityPath : IUnityPath
 
     private string GetUnityProjectDirectory(string unityProjectPath)
     {
-        var directoryInfo = _fileSystem.Directory.GetParent(unityProjectPath);
+        var directoryInfo = fileSystem.Directory.GetParent(unityProjectPath);
         if (directoryInfo.GetDirectories("Assets", SearchOption.TopDirectoryOnly).Any())
         {
             return directoryInfo.FullName;
         }
 
-        if (_fileSystem.Directory.GetDirectories(unityProjectPath, "Assets", SearchOption.TopDirectoryOnly).Any())
+        if (fileSystem.Directory.GetDirectories(unityProjectPath, "Assets", SearchOption.TopDirectoryOnly).Any())
         {
             return unityProjectPath;
         }
