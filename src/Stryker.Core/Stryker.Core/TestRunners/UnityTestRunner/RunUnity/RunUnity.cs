@@ -103,6 +103,8 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
 
         XDocument RunTestsForMode(UnityTestMode testMode, IStrykerOptions strykerOptions, string helperNamespace, string activeMutantId)
         {
+            TryOpenUnity(strykerOptions, projectPath, additionalArgumentsForCli);
+
             logger.LogDebug("Running Unity tests in {0} mode", testMode);
 
             var pathToTestResultXml =
@@ -114,6 +116,12 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
             while (!string.IsNullOrWhiteSpace(File.ReadAllText(_pathToUnityListenFile)))
             {
                 ThrowExceptionIfExists();
+                if (_unityProcess!= null && _unityProcess.HasExited)
+                {
+                    logger.LogWarning("Unity process has exited without intention. Potentially because of mutation. Failing all tests");
+                    break;
+                }
+
                 var memoryOverUsed = CheckMemoryUsageAndRestartIfOverThreshold(); //some tests can go to infinitive loop and go allocate infinitive amount of memory and time. And Unity tests doesn't catch this
                 if (memoryOverUsed)
                 {
@@ -170,6 +178,11 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
                 logger.LogDebug("Unity process is no longer accessible during memory check");
                 return false;
             }
+            catch (Exception ex)
+            {
+                logger.LogDebug(ex, "Unexpected error during memory check");
+                return false;
+            }
         }
     }
 
@@ -187,16 +200,19 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
 
         if (_unityInProgress && _currentUnityRunArguments != GetArgumentsToRun(projectPath, additionalArgumentsForCli))
         {
-            logger.LogError(
-                "Trying to run unity with other arguments when instance already opened. Waiting for closing the current one.");
-            CloseUnity();
+            logger.LogError("Trying to run unity with other arguments when instance already opened. Waiting for closing the current one.");
+            KillUnity();
+        }
+        else if (_unityInProgress && (_unityProcess == null || _unityProcess.HasExited))
+        {
+            logger.LogInformation("Unity process has exited. Restarting Unity.");
+            KillUnity();
         }
         else if (_unityInProgress)
         {
             logger.LogDebug("Trying to run unity when instance already opened. Nothing to do");
             return;
         }
-
 
         OpenUnity(strykerOptions, projectPath, additionalArgumentsForCli);
     }
@@ -233,6 +249,11 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
                 throw new UnityExecuteException(processResult.ExitCode, pathToUnityLogFile);
             }
         });
+
+        while (_unityProcess != null)
+        {
+            //wait for process to start
+        }
     }
 
     private string GetArgumentsToRun(string projectPath, string additionalArgumentsForCli = null) =>
@@ -267,19 +288,6 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
         }
     }
 
-    private void CloseUnity()
-    {
-        if (!_unityInProgress)
-        {
-            logger.LogDebug("Request to close Unity. Unity is not running. Do nothing");
-            return;
-        }
-
-        logger.LogDebug("Request to close Unity");
-
-        SendCommandToUnity_Exit();
-        _unityProcessTask.GetAwaiter().GetResult();
-    }
 
     private void KillUnity()
     {
@@ -288,13 +296,19 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
             logger.LogDebug("Request to kill Unity. Unity is not running. Do nothing");
             return;
         }
-        logger.LogDebug("Request to kill Unity");
 
-        _unityProcess.Kill(true);
-        Thread.Sleep(10_000); //wait to kill the app
+        logger.LogDebug("Request to kill Unity");
+        SendCommandToUnity_Exit();
+
+        if (_unityProcess != null && !_unityProcess.HasExited)
+        {
+            _unityProcess.Kill(true);
+            Thread.Sleep(10_000); //wait to kill the app
+        }
+        
         try
         {
-            _unityProcessTask.GetAwaiter().GetResult();
+            _unityProcessTask?.GetAwaiter().GetResult();
         }
         catch (Exception)
         {
@@ -302,6 +316,7 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
         }
         _unityProcess = null;
         _unityProcessTask = null;
+        _unityInProgress = false;
     }
 
     private void CheckAndAddStrykerUnityPackage(string projectPath)
