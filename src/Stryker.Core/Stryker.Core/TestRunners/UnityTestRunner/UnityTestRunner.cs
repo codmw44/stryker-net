@@ -21,6 +21,7 @@ public class UnityTestRunner(
     private bool _firstMutationTestStarted;
     private TestRunResult _initialRunTestResult;
     private TestSet _testSet;
+    private Dictionary<string, IFrameworkTestDescription> _testDescriptions = new();
 
     public bool DiscoverTests(string assembly)
     {
@@ -31,17 +32,35 @@ public class UnityTestRunner(
 
         var testResultsXml = RunTests(out var duration);
 
-        //todo add valid test file path. It used for checking diff by git and ut of the box dont provides in xml
         _testSet = new TestSet();
-        _testSet.RegisterTests(testResultsXml
+        _testDescriptions = testResultsXml
             .Descendants("test-case")
             .Where(element => element.Attribute("result").Value is "Passed" or "Failed")
-            .Select(element => new TestDescription(element.Attribute("id").Value,
-                element.Attribute("name").Value, element.Attribute("fullname").Value)));
+            .Select(element =>
+            {
+                var id = element.Attribute("id").Value;
+                var name = element.Attribute("name").Value;
+                var fullname = element.Attribute("fullname").Value;
 
-        _initialRunTestResult = new TestRunResult(Enumerable.Empty<VsTestDescription>(), GetPassedTests(testResultsXml),
+                // Find the parent test-suite with type="Assembly" for this test case
+                var assemblyPath = element.Ancestors("test-suite")
+                    .FirstOrDefault(ancestor => ancestor.Attribute("type")?.Value == "Assembly")
+                    ?.Attribute("fullname")?.Value ?? string.Empty;
+
+                var testDescription = new TestDescription(id, name, fullname);
+                var testCase = new UnityTestCase(id, name, fullname, assemblyPath)
+                {
+
+                };
+                return new UnityTestDescription(testDescription, testCase);
+            })
+            .ToDictionary(element => element.Id, IFrameworkTestDescription (element) => element);
+
+        _testSet.RegisterTests(_testDescriptions.Values.Select(description => description.Description));
+
+        _initialRunTestResult = new TestRunResult(_testDescriptions.Values, GetPassedTests(testResultsXml),
             GetFailedTests(testResultsXml),
-            GetTimeoutTestGuidsList(), string.Empty, Enumerable.Empty<string>(), duration);
+            GetTimeoutTestGuidsList(), GetErrorMessages(testResultsXml), GetMessages(testResultsXml), duration);
         return true;
     }
 
@@ -79,8 +98,8 @@ public class UnityTestRunner(
 
         _firstMutationTestStarted = true;
 
-        return new TestRunResult(Enumerable.Empty<VsTestDescription>(), passedTests, failedTests,
-            GetTimeoutTestGuidsList(), string.Empty, Enumerable.Empty<string>(), duration);
+        return new TestRunResult(_testDescriptions.Values, passedTests, failedTests,
+            GetTimeoutTestGuidsList(), GetErrorMessages(testResultsXml), GetMessages(testResultsXml), duration);
     }
 
     private XDocument RunTests(out TimeSpan duration, string activeMutantId = null, string helperNamespace = null)
@@ -120,5 +139,61 @@ public class UnityTestRunner(
             : new TestIdentifierList(_testSet.Extract(ids));
 
         return failedTests;
+    }
+
+    private static string GetErrorMessages(XContainer testResultsXml)
+    {
+        var errorMessages = testResultsXml.Descendants("test-case")
+            .Where(element => element.Attribute("result")?.Value == "Failed")
+            .Select(testCase =>
+            {
+                var testName = testCase.Attribute("fullname")?.Value ?? testCase.Attribute("name")?.Value ?? "Unknown Test";
+                var failure = testCase.Element("failure");
+                var message = failure?.Element("message")?.Value ?? string.Empty;
+
+                if (!string.IsNullOrWhiteSpace(message))
+                {
+                    return $"{testName}{Environment.NewLine}{Environment.NewLine}{message}";
+                }
+                return string.Empty;
+            })
+            .Where(msg => !string.IsNullOrWhiteSpace(msg));
+
+        return string.Join(Environment.NewLine, errorMessages);
+    }
+
+    private static IEnumerable<string> GetMessages(XContainer testResultsXml)
+    {
+        return testResultsXml.Descendants("test-case")
+            .Select(testCase =>
+            {
+                var testName = testCase.Attribute("fullname")?.Value ?? testCase.Attribute("name")?.Value ?? "Unknown Test";
+                var output = testCase.Element("output")?.Value ?? string.Empty;
+                var failure = testCase.Element("failure");
+
+                var messages = new List<string>();
+
+                if (!string.IsNullOrWhiteSpace(output))
+                {
+                    messages.Add(output);
+                }
+
+                if (failure != null)
+                {
+                    var message = failure.Element("message")?.Value;
+                    if (!string.IsNullOrWhiteSpace(message))
+                    {
+                        messages.Add(message);
+                    }
+                }
+
+                if (messages.Count > 0)
+                {
+                    return $"{testName}{Environment.NewLine}{Environment.NewLine}{string.Join(Environment.NewLine, messages)}";
+                }
+
+                return string.Empty;
+            })
+            .Where(msg => !string.IsNullOrWhiteSpace(msg));
     }
 }
