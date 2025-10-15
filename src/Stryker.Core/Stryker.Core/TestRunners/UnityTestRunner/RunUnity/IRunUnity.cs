@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Xml.Linq;
 using Stryker.Abstractions.Options;
 
@@ -10,7 +11,8 @@ public interface IRunUnity : IDisposable
         string additionalArgumentsForCli = null);
 
     XDocument RunTests(IStrykerOptions strykerOptions, string projectPath,
-        string additionalArgumentsForCli = null, string helperNamespace = null, string activeMutantId = null);
+        string additionalArgumentsForCli = null, string helperNamespace = null, string activeMutantId = null,
+        IEnumerable<string> targetTestAssemblies = null, UnityTestMode testMode = UnityTestMode.All);
 
     void RemoveScriptAssembliesDirectory(string projectPath);
 }

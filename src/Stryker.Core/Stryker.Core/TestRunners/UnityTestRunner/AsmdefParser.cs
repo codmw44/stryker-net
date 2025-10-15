@@ -1,0 +1,67 @@
+using System.IO;
+using System.Text.Json;
+using Stryker.Abstractions.Options;
+
+namespace Stryker.Core.TestRunners.UnityTestRunner;
+
+public static class AsmdefParser
+{
+    public static UnityTestMode GetTestMode(string asmdefPath)
+    {
+        try
+        {
+            var json = File.ReadAllText(asmdefPath);
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
+
+            if (root.TryGetProperty("includePlatforms", out var includePlatforms) &&
+                includePlatforms.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var platform in includePlatforms.EnumerateArray())
+                {
+                    if (platform.GetString() == "Editor")
+                    {
+                        return UnityTestMode.EditMode;
+                    }
+                }
+                return UnityTestMode.PlayMode;
+            }
+
+            return UnityTestMode.All;
+        }
+        catch
+        {
+            return UnityTestMode.All;
+        }
+    }
+
+    public static bool IsTestAssembly(string asmdefPath)
+    {
+        try
+        {
+            var json = File.ReadAllText(asmdefPath);
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
+
+            if (root.TryGetProperty("references", out var references) &&
+                references.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var reference in references.EnumerateArray())
+                {
+                    var refName = reference.GetString();
+                    if (refName != null && (refName.Contains("UnityEngine.TestRunner") ||
+                                          refName.Contains("UnityEditor.TestRunner")))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+}

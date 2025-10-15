@@ -65,12 +65,12 @@ namespace Stryker.UnitySDK
 
                     var commands = command.Split(" ");
 
-					_runPathToOutput = commands.LastOrDefault();
-                    var testMode = (commands.FirstOrDefault() ?? string.Empty).Contains("playmode") ? TestMode.PlayMode : TestMode.EditMode;
+					_runPathToOutput = commands[1];
+                    var testMode = commands[0].Contains("playmode") ? TestMode.PlayMode : TestMode.EditMode;
                     string[] assemblyNames = null;
                     if (commands.Length >= 3)
                     {
-                        assemblyNames = commands[1].Split(";");
+                        assemblyNames = commands[2].Split(";");
                     }
 
                     if (EditorApplication.isPlaying && !TestsInProgress)
@@ -87,7 +87,8 @@ namespace Stryker.UnitySDK
                     }
                     else if (!EditorApplication.isPlaying)
                     {
-                        Log("Start testRunnerApi.Execute of command '" + command + "'" + $" with executionSettings: testMode {testMode} assemblyNames {assemblyNames}");
+                        Log("Start testRunnerApi.Execute of command '" + command + "'" +
+                            $" with executionSettings: testMode {testMode} assemblyNames {string.Join(" ", assemblyNames ?? Array.Empty<string>())}");
 
                         var executionSettings = new ExecutionSettings(new Filter() { testMode = testMode, assemblyNames = assemblyNames});
                         _testRunnerApi.Execute(executionSettings);
@@ -193,7 +194,7 @@ namespace Stryker.UnitySDK
 
 		public void TestStarted(ITestAdaptor test)
 		{
-            RunTests.Log("Test started: " + test.FullName + " " + test.RunState);
+            RunTests.Log("Test started: " + test + " " + test.RunState);
 		}
 
 		public void TestFinished(ITestResultAdaptor result)

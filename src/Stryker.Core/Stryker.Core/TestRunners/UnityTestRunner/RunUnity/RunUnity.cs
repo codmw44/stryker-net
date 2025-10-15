@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Abstractions;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -53,7 +55,8 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
     }
 
     public XDocument RunTests(IStrykerOptions strykerOptions, string projectPath,
-        string additionalArgumentsForCli = null, string helperNamespace = null, string activeMutantId = null)
+        string additionalArgumentsForCli = null, string helperNamespace = null, string activeMutantId = null,
+        IEnumerable<string> targetTestAssemblies = null, UnityTestMode testModeInput = UnityTestMode.All)
     {
         logger.LogDebug("Request to run tests Unity");
         _unityMemoryConsumptionLimitInMb = strykerOptions.UnityMemoryConsumptionLimitInMb;
@@ -69,17 +72,17 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
 
         var combinedResults = new XDocument(new XElement("TestRun"));
 
-        switch (strykerOptions.UnityTestMode)
+        switch (testModeInput)
         {
             case UnityTestMode.All:
 
-                var editModeResults = RunTestsForMode(UnityTestMode.EditMode, strykerOptions, helperNamespace, activeMutantId);
+                var editModeResults = RunTestsForMode(UnityTestMode.EditMode, strykerOptions, helperNamespace, activeMutantId, targetTestAssemblies);
                 if (editModeResults != null && editModeResults.Root != null)
                 {
                     combinedResults.Root.Add(editModeResults.Root.Elements());
                 }
 
-                var playModeResults = RunTestsForMode(UnityTestMode.PlayMode, strykerOptions, helperNamespace, activeMutantId);
+                var playModeResults = RunTestsForMode(UnityTestMode.PlayMode, strykerOptions, helperNamespace, activeMutantId, targetTestAssemblies);
                 if (playModeResults != null && playModeResults.Root != null)
                 {
                     combinedResults.Root.Add(playModeResults.Root.Elements());
@@ -88,7 +91,7 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
 
             case UnityTestMode.PlayMode:
             case UnityTestMode.EditMode:
-                var playModeOnlyResults = RunTestsForMode(strykerOptions.UnityTestMode, strykerOptions, helperNamespace, activeMutantId);
+                var playModeOnlyResults = RunTestsForMode(testModeInput, strykerOptions, helperNamespace, activeMutantId, targetTestAssemblies);
                 if (playModeOnlyResults != null && playModeOnlyResults.Root != null)
                 {
                     combinedResults.Root.Add(playModeOnlyResults.Root.Elements());
@@ -101,7 +104,7 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
 
         return combinedResults;
 
-        XDocument RunTestsForMode(UnityTestMode testMode, IStrykerOptions strykerOptions, string helperNamespace, string activeMutantId)
+        XDocument RunTestsForMode(UnityTestMode testMode, IStrykerOptions strykerOptions, string helperNamespace, string activeMutantId, IEnumerable<string> targetAssemblies)
         {
             TryOpenUnity(strykerOptions, projectPath, additionalArgumentsForCli);
 
@@ -110,7 +113,7 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
             var pathToTestResultXml =
                 Path.Combine(strykerOptions.OutputPath, $"test_results_{testMode.ToString().ToLowerInvariant()}_{DateTime.Now.ToFileTime()}.xml");
 
-            SendCommandToUnity_RunTests(testMode, pathToTestResultXml);
+            SendCommandToUnity_RunTests(testMode, pathToTestResultXml, targetAssemblies);
 
             //WaitUntilEndOfCommand
             while (!string.IsNullOrWhiteSpace(File.ReadAllText(_pathToUnityListenFile)))
@@ -262,7 +265,18 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
 
     private void SendCommandToUnity_ReloadDomain() => SendCommandToUnity("reloadDomain");
     private void SendCommandToUnity_Exit() => SendCommandToUnity("exit");
-    private void SendCommandToUnity_RunTests(UnityTestMode testMode, string pathToSaveTestResult) => SendCommandToUnity($"{testMode.ToString().ToLowerInvariant()} {pathToSaveTestResult}");
+    private void SendCommandToUnity_RunTests(UnityTestMode testMode, string pathToSaveTestResult, IEnumerable<string> targetAssemblies = null)
+    {
+        var command = $"{testMode.ToString().ToLowerInvariant()} {pathToSaveTestResult}";
+
+        if (targetAssemblies != null && targetAssemblies.Any())
+        {
+            var assembliesParam = string.Join(";", targetAssemblies);
+            command += $" {assembliesParam}";
+        }
+
+        SendCommandToUnity(command);
+    }
     private void SendCommandToUnity(string command) => File.WriteAllText(_pathToUnityListenFile, command);
 
     private void CleanupCommandBuffer() => File.WriteAllText(_pathToUnityListenFile, string.Empty);
@@ -305,7 +319,7 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
             _unityProcess.Kill(true);
             Thread.Sleep(10_000); //wait to kill the app
         }
-        
+
         try
         {
             _unityProcessTask?.GetAwaiter().GetResult();

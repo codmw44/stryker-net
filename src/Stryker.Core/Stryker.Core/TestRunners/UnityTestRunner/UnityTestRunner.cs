@@ -22,6 +22,8 @@ public class UnityTestRunner(
     private TestRunResult _initialRunTestResult;
     private TestSet _testSet;
     private Dictionary<string, IFrameworkTestDescription> _testDescriptions = new();
+    private UnityTestAssemblyAnalyzer _assemblyAnalyzer= new UnityTestAssemblyAnalyzer();
+    private MutantAssemblyMapper _mutantAssemblyMapper = new MutantAssemblyMapper();
 
     public bool DiscoverTests(string assembly)
     {
@@ -54,7 +56,7 @@ public class UnityTestRunner(
                 };
                 return new UnityTestDescription(testDescription, testCase);
             })
-            .ToDictionary(element => element.Id, IFrameworkTestDescription (element) => element);
+            .DistinctBy(element => element.Id).ToDictionary(element => element.Id, IFrameworkTestDescription (element) => element);
 
         _testSet.RegisterTests(_testDescriptions.Values.Select(description => description.Description));
 
@@ -66,7 +68,12 @@ public class UnityTestRunner(
 
     public ITestSet GetTests(IProjectAndTests project) => _testSet;
 
-    public ITestRunResult InitialTest(IProjectAndTests project) => _initialRunTestResult;
+    public ITestRunResult InitialTest(IProjectAndTests project)
+    {
+        _assemblyAnalyzer.AnalyzeSolution(project);
+        _mutantAssemblyMapper.BuildMapping(project);
+        return _initialRunTestResult;
+    }
 
     public IEnumerable<ICoverageRunResult> CaptureCoverage(IProjectAndTests project) => [];
 
@@ -77,15 +84,41 @@ public class UnityTestRunner(
         runUnity.Dispose();
     }
 
-    //todo remove all modifications
-    //todo remove installed package
     public ITestRunResult TestMultipleMutants(IProjectAndTests project, ITimeoutValueCalculator timeoutCalc, IReadOnlyList<IMutant> mutants, ITestRunner.TestUpdateHandler update)
     {
         if (!_firstMutationTestStarted)
             //rerun unity to apply modifications and reload domain
             runUnity.ReloadDomain(strykerOptions, strykerOptions.WorkingDirectory);
 
-        var testResultsXml = RunTests(out var duration, mutants.Single().Id.ToString(), project.HelperNamespace);
+        // Determine target test assemblies based on mutants and test mode
+        IEnumerable<string> targetAssemblies = null;
+        var testModeFromFilteredAssemblies = strykerOptions.UnityTestMode;
+
+        if (_assemblyAnalyzer != null)
+        {
+            var relevantTestAssemblies = _assemblyAnalyzer.GetFilteredTestAssemblies(mutants, strykerOptions.UnityTestMode);
+            targetAssemblies = relevantTestAssemblies.Select(ta => ta.AssemblyName).ToList();
+            testModeFromFilteredAssemblies = UnityTestMode.None;
+            foreach (var unityTestAssemblyInfo in relevantTestAssemblies)
+            {
+                testModeFromFilteredAssemblies |= unityTestAssemblyInfo.SupportedModes;
+            }
+            if (testModeFromFilteredAssemblies.HasFlag(UnityTestMode.EditMode) && !strykerOptions.UnityTestMode.HasFlag(UnityTestMode.EditMode))
+                testModeFromFilteredAssemblies &= ~UnityTestMode.EditMode;
+            if (testModeFromFilteredAssemblies.HasFlag(UnityTestMode.PlayMode) && !strykerOptions.UnityTestMode.HasFlag(UnityTestMode.PlayMode))
+                testModeFromFilteredAssemblies &= ~UnityTestMode.PlayMode;
+
+            if (targetAssemblies.Any())
+            {
+                logger.LogDebug("Running tests for assemblies: {0}", string.Join(", ", targetAssemblies));
+            }
+            else
+            {
+                logger.LogDebug("No relevant test assemblies found for mutants, running all tests");
+            }
+        }
+
+        var testResultsXml = RunTests(out var duration, mutants.Single().Id.ToString(), project.HelperNamespace, targetAssemblies, testModeFromFilteredAssemblies);
 
         var passedTests = GetPassedTests(testResultsXml);
         var failedTests = GetFailedTests(testResultsXml);
@@ -102,12 +135,12 @@ public class UnityTestRunner(
             GetTimeoutTestGuidsList(), GetErrorMessages(testResultsXml), GetMessages(testResultsXml), duration);
     }
 
-    private XDocument RunTests(out TimeSpan duration, string activeMutantId = null, string helperNamespace = null)
+    private XDocument RunTests(out TimeSpan duration, string activeMutantId = null, string helperNamespace = null, IEnumerable<string> targetTestAssemblies = null, UnityTestMode testMode = UnityTestMode.All)
     {
         var startTime = DateTime.UtcNow;
 
         var xmlTestResults = runUnity.RunTests(strykerOptions, strykerOptions.WorkingDirectory,
-            activeMutantId: activeMutantId, helperNamespace: helperNamespace);
+            activeMutantId: activeMutantId, helperNamespace: helperNamespace, targetTestAssemblies: targetTestAssemblies, testMode: testMode);
 
         duration = DateTime.UtcNow - startTime;
         return xmlTestResults;

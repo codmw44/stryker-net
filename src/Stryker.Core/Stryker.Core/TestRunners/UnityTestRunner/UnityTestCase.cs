@@ -13,7 +13,6 @@ public sealed class UnityTestCase : ITestCase
         FullyQualifiedName = fullyQualifiedName;
         Source = source;
         CodeFilePath = source;
-        Uri = new Uri("");
         LineNumber = -1;
     }
 
