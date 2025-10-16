@@ -82,6 +82,10 @@ public class UnityTestRunner(
         // Required to avoid not relevant experience for the developer when open the project after Stryker run
         runUnity.RemoveScriptAssembliesDirectory(strykerOptions.WorkingDirectory);
         runUnity.Dispose();
+        if (!strykerOptions.DevMode)
+        {
+            CleanupTestArtifacts();
+        }
     }
 
     public ITestRunResult TestMultipleMutants(IProjectAndTests project, ITimeoutValueCalculator timeoutCalc, IReadOnlyList<IMutant> mutants, ITestRunner.TestUpdateHandler update)
@@ -228,5 +232,36 @@ public class UnityTestRunner(
                 return string.Empty;
             })
             .Where(msg => !string.IsNullOrWhiteSpace(msg));
+    }
+
+    private void CleanupTestArtifacts()
+    {
+        try
+        {
+            var testResultsFiles = System.IO.Directory.GetFiles(strykerOptions.OutputPath, "test_results*", System.IO.SearchOption.TopDirectoryOnly);
+            foreach (var file in testResultsFiles)
+            {
+                logger.LogDebug("Removing test result file: {0}", file);
+                System.IO.File.Delete(file);
+            }
+
+            var unityListensPath = System.IO.Path.Combine(strykerOptions.OutputPath, "UnityListens.txt");
+            if (System.IO.File.Exists(unityListensPath))
+            {
+                logger.LogDebug("Removing UnityListens.txt file: {0}", unityListensPath);
+                System.IO.File.Delete(unityListensPath);
+            }
+
+            var activeMutantFiles = System.IO.Directory.GetFiles(strykerOptions.OutputPath, "Stryker*.txt", System.IO.SearchOption.TopDirectoryOnly);
+            foreach (var file in activeMutantFiles)
+            {
+                logger.LogDebug("Removing active mutant file: {0}", file);
+                System.IO.File.Delete(file);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to cleanup test artifacts");
+        }
     }
 }
