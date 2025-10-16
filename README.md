@@ -11,7 +11,7 @@
 
 ## Introduction
 
-Stryker offers mutation testing for your .NET Core and .NET Framework projects. It allows you to test your tests by temporarily inserting bugs in your source code.
+Stryker offers mutation testing for your .NET Core and .NET Framework projects and Unity projects. It allows you to test your tests by temporarily inserting bugs in your source code.
 
 For an introduction to mutation testing and Stryker's features, see [stryker-mutator.io](https://stryker-mutator.io/). Looking for mutation testing in [JavaScript & Typescript](https://stryker-mutator.github.io/stryker) or [Scala](https://stryker-mutator.github.io/stryker4s)?
 
@@ -22,11 +22,15 @@ Minimum target version:
 - dotnet core 1.1
 - dotnet framework 4.5
 - dotnet standard 1.3
+- Unity <todo replace with checked minimum version>
 
  Tested against:
 
 - dotnet core 3.1
 - dotnet framework 4.8
+- Unity 6
+- Unity 2022
+- 
 
 ## Getting started
 
