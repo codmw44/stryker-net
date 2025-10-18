@@ -213,7 +213,7 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
         }
         else if (_unityInProgress)
         {
-            logger.LogDebug("Trying to run unity when instance already opened. Nothing to do");
+            logger.LogTrace("Trying to run unity when instance already opened. Nothing to do");
             return;
         }
 
@@ -391,7 +391,7 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
     {
         var scriptAssembliesPath = Path.Combine(projectPath, "Library", "ScriptAssemblies");
 
-        return;
+        return; //todo remove it.  It was made because it freezes
         if (Directory.Exists(scriptAssembliesPath))
         {
             try
