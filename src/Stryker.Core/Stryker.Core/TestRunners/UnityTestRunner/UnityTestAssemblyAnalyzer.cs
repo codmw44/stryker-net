@@ -27,41 +27,27 @@ public class UnityTestAssemblyAnalyzer
     {
         _unityAssemblyMapper = new UnityAssemblyMapper();
 
-        // Get test project analyzer results
-        if (project.TestProjectsInfo?.AnalyzerResults != null)
+        foreach (var analyzerResult in project.TestProjectsInfo.AnalyzerResults)
         {
-            foreach (var analyzerResult in project.TestProjectsInfo.AnalyzerResults)
-            {
-                AnalyzeProject(analyzerResult);
-            }
+            AnalyzeProject(analyzerResult);
         }
     }
 
     private void AnalyzeProject(IAnalyzerResult analyzerResult)
     {
-        // Check if this is a Unity test project by reading .asmdef files
-        // and checking their "references" section for Unity test runners
-        var hasUnityTests = IsUnityTestProject(analyzerResult);
-
-        if (!hasUnityTests)
+        if (!IsUnityTestProject(analyzerResult))
         {
             return;
         }
 
         var assemblyName = analyzerResult.GetAssemblyName();
-        var projectPath = analyzerResult.ProjectFilePath;
-
-        // Determine supported test modes by analyzing .asmdef files
-        var supportedModes = DetermineTestModes(analyzerResult);
-
-        // Get referenced assemblies
         var referencedAssemblies = GetReferencedAssemblies(analyzerResult);
 
         var testAssemblyInfo = new UnityTestAssemblyInfo
         {
             AssemblyName = assemblyName,
-            ProjectPath = projectPath,
-            SupportedModes = supportedModes,
+            ProjectPath = analyzerResult.ProjectFilePath,
+            SupportedModes = DetermineTestModes(analyzerResult),
             ReferencedAssemblies = referencedAssemblies
         };
 
