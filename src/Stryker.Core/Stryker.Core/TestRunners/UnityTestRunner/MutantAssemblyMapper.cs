@@ -15,10 +15,6 @@ public class MutantAssemblyMapper
 
     public void BuildMapping(IProjectAndTests project)
     {
-        // Build mapping from file paths to assembly names by reading csproj files
-        // and getting <Compile Include="..." /> records
-
-        // Process main source project (non-test assemblies)
         if (project is SourceProjectInfo sourceProject && sourceProject.AnalyzerResult != null)
         {
             ProcessAnalyzerResult(sourceProject.AnalyzerResult);
@@ -80,29 +76,12 @@ public class MutantAssemblyMapper
         var directory = Path.GetDirectoryName(normalizedPath);
         while (!string.IsNullOrEmpty(directory))
         {
-            var matchingEntries = _fileToAssemblyMap
-                .Where(kvp => kvp.Key.StartsWith(directory, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            if (matchingEntries.Count == 1)
+            var asmDefFiles = Directory.GetFiles(directory, "*.asmdef", SearchOption.TopDirectoryOnly);
+            if (asmDefFiles.Any())
             {
-                return matchingEntries.First().Value;
+                //todo read asmdef file, deserialize json and take Name from it. Because file name can missmatch with assembly name
+                return Path.GetFileNameWithoutExtension(asmDefFiles.First());
             }
-
-            if (matchingEntries.Count > 1)
-            {
-                // Multiple matches, try to find the most specific one
-                var bestMatch = matchingEntries
-                    .OrderByDescending(kvp => kvp.Key.Length)
-                    .FirstOrDefault();
-
-                if (bestMatch.Key != null)
-                {
-                    return bestMatch.Value;
-                }
-            }
-
-            directory = Path.GetDirectoryName(directory);
         }
 
         return null;
