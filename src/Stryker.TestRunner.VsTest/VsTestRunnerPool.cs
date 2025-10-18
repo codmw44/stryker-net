@@ -6,6 +6,7 @@ using System.IO.Abstractions;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Buildalyzer;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Stryker.Abstractions;
@@ -13,6 +14,7 @@ using Stryker.Abstractions.Options;
 using Stryker.Abstractions.Testing;
 using Stryker.TestRunner.Results;
 using Stryker.TestRunner.Tests;
+using Stryker.Utilities.Buildalyzer;
 using Stryker.Utilities.Logging;
 using static Stryker.Abstractions.Testing.ITestRunner;
 using CoverageCollector = Stryker.DataCollector.CoverageCollector;
@@ -53,7 +55,7 @@ public sealed class VsTestRunnerPool : ITestRunner
         Initialize();
     }
 
-    public bool DiscoverTests(string assembly) => Context.AddTestSource(assembly);
+    public bool DiscoverTests(IAnalyzerResult assembly) => Context.AddTestSource(assembly.GetAssemblyPath());
 
     public ITestSet GetTests(IProjectAndTests project) => Context.GetTestsForSources(project.GetTestAssemblies());
 

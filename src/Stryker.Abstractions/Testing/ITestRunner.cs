@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Buildalyzer;
 
 namespace Stryker.Abstractions.Testing;
 
@@ -10,7 +11,7 @@ public interface ITestRunner : IDisposable
        ITestIdentifiers ranTests,
        ITestIdentifiers timedOutTests);
 
-    bool DiscoverTests(string assembly);
+    bool DiscoverTests(IAnalyzerResult assembly);
 
     ITestSet GetTests(IProjectAndTests project);
 

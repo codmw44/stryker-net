@@ -21,19 +21,17 @@ public class UnityTestAssemblyAnalyzer
 {
     private readonly Dictionary<string, UnityTestAssemblyInfo> _testAssemblies = new();
     private readonly Dictionary<string, List<string>> _assemblyReferences = new();
-    private UnityAssemblyMapper _unityAssemblyMapper;
+    private UnityAssemblyMapper _unityAssemblyMapper = new UnityAssemblyMapper();
 
     public void AnalyzeSolution(IProjectAndTests project)
     {
-        _unityAssemblyMapper = new UnityAssemblyMapper();
-
         foreach (var analyzerResult in project.TestProjectsInfo.AnalyzerResults)
         {
             AnalyzeProject(analyzerResult);
         }
     }
 
-    private void AnalyzeProject(IAnalyzerResult analyzerResult)
+    public void AnalyzeProject(IAnalyzerResult analyzerResult)
     {
         if (!IsUnityTestProject(analyzerResult))
         {
@@ -54,6 +52,8 @@ public class UnityTestAssemblyAnalyzer
         _testAssemblies[assemblyName] = testAssemblyInfo;
         _assemblyReferences[assemblyName] = referencedAssemblies;
     }
+
+    public bool TryGetTestAssemblyInfo(string assemblyName, out UnityTestAssemblyInfo testAssemblyInfo) => _testAssemblies.TryGetValue(assemblyName, out testAssemblyInfo);
 
     private UnityTestMode DetermineTestModes(IAnalyzerResult analyzerResult)
     {
@@ -191,7 +191,7 @@ public class UnityTestAssemblyAnalyzer
     }
 
 
-    private bool IsUnityTestProject(IAnalyzerResult analyzerResult)
+    public bool IsUnityTestProject(IAnalyzerResult analyzerResult)
     {
         try
         {

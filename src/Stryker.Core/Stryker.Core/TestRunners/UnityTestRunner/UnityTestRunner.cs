@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
+using Buildalyzer;
 using Microsoft.Extensions.Logging;
 using Stryker.Abstractions;
 using Stryker.Abstractions.Options;
@@ -10,6 +11,7 @@ using Stryker.Core.TestRunners.UnityTestRunner.RunUnity;
 using Stryker.TestRunner.Results;
 using Stryker.TestRunner.Tests;
 using Stryker.TestRunner.VsTest;
+using Stryker.Utilities.Buildalyzer;
 
 namespace Stryker.Core.TestRunners.UnityTestRunner;
 
@@ -22,56 +24,118 @@ public class UnityTestRunner(
     private TestRunResult _initialRunTestResult;
     private TestSet _testSet;
     private Dictionary<string, IFrameworkTestDescription> _testDescriptions = new();
-    private UnityTestAssemblyAnalyzer _assemblyAnalyzer= new UnityTestAssemblyAnalyzer();
-    private UnityAssemblyMapper _unityAssemblyMapper = new UnityAssemblyMapper();
+    private readonly UnityTestAssemblyAnalyzer _assemblyAnalyzer = new();
 
-    public bool DiscoverTests(string assembly)
+    public bool DiscoverTests(IAnalyzerResult assembly)
     {
-        if (_testSet != null) return true;
+        if (_testSet == null)
+        {
+            //Required to have fresh not modified dlls
+            runUnity.RemoveScriptAssembliesDirectory(strykerOptions.WorkingDirectory);
 
-        //Required to have fresh not modified dlls
-        runUnity.RemoveScriptAssembliesDirectory(strykerOptions.WorkingDirectory);
+            var testResultsXml = RunTests(out var duration);
 
-        var testResultsXml = RunTests(out var duration);
+            _assemblyAnalyzer.AnalyzeProject(assembly);
 
-        _testSet = new TestSet();
-        _testDescriptions = testResultsXml
-            .Descendants("test-case")
-            .Where(element => element.Attribute("result").Value is "Passed" or "Failed")
-            .Select(element =>
-            {
-                var id = element.Attribute("id").Value;
-                var name = element.Attribute("name").Value;
-                var fullname = element.Attribute("fullname").Value;
 
-                // Find the parent test-suite with type="Assembly" for this test case
-                var assemblyPath = element.Ancestors("test-suite")
-                    .FirstOrDefault(ancestor => ancestor.Attribute("type")?.Value == "Assembly")
-                    ?.Attribute("fullname")?.Value ?? string.Empty;
-
-                var testDescription = new TestDescription(id, name, fullname);
-                var testCase = new UnityTestCase(id, name, fullname, assemblyPath)
+            _testSet = new TestSet();
+            _testDescriptions = testResultsXml
+                .Descendants("test-case")
+                .Where(element => element.Attribute("result").Value is "Passed" or "Failed")
+                .Select(element =>
                 {
+                    var id = element.Attribute("id").Value;
+                    var name = element.Attribute("name").Value;
+                    var fullname = element.Attribute("fullname").Value;
 
-                };
-                return new UnityTestDescription(testDescription, testCase);
-            })
-            .DistinctBy(element => element.Id).ToDictionary(element => element.Id, IFrameworkTestDescription (element) => element);
+                    // Find the parent test-suite with type="Assembly" for this test case
+                    var assemblyPath = element.Ancestors("test-suite")
+                        .FirstOrDefault(ancestor => ancestor.Attribute("type")?.Value == "Assembly")
+                        ?.Attribute("fullname")?.Value ?? string.Empty;
 
-        _testSet.RegisterTests(_testDescriptions.Values.Select(description => description.Description));
+                    var testDescription = new TestDescription(id, name, fullname);
+                    var testCase = new UnityTestCase(id, name, fullname, assemblyPath) { };
+                    return new UnityTestDescription(testDescription, testCase);
+                })
+                .DistinctBy(element => element.Id).ToDictionary(element => element.Id, IFrameworkTestDescription (element) => element);
 
-        _initialRunTestResult = new TestRunResult(_testDescriptions.Values, GetPassedTests(testResultsXml),
-            GetFailedTests(testResultsXml),
-            GetTimeoutTestGuidsList(), GetErrorMessages(testResultsXml), GetMessages(testResultsXml), duration);
-        return true;
+            _testSet.RegisterTests(_testDescriptions.Values.Select(description => description.Description));
+
+            _initialRunTestResult = new TestRunResult(_testDescriptions.Values, GetPassedTests(testResultsXml),
+                GetFailedTests(testResultsXml),
+                GetTimeoutTestGuidsList(), GetErrorMessages(testResultsXml), GetMessages(testResultsXml), duration);
+        }
+
+        _assemblyAnalyzer.AnalyzeProject(assembly);
+
+        return _assemblyAnalyzer.TryGetTestAssemblyInfo(assembly.GetAssemblyName(), out var testAssemblyInfo)
+               && testAssemblyInfo.SupportedModes.HasFlag(strykerOptions.UnityTestMode);
     }
 
-    public ITestSet GetTests(IProjectAndTests project) => _testSet;
+    public ITestSet GetTests(IProjectAndTests project)
+    {
+        if (_testSet == null)
+        {
+            return new TestSet();
+        }
+
+        // Filter tests based on the project's test assemblies and UnityTestMode
+        var projectTestAssemblies = project.GetTestAssemblies();
+        if (!projectTestAssemblies.Any())
+        {
+            return _testSet;
+        }
+
+        // Get test assemblies that support the requested UnityTestMode
+        var modeCompatibleAssemblies = GetModeCompatibleAssemblies(projectTestAssemblies);
+        if (!modeCompatibleAssemblies.Any())
+        {
+            return new TestSet();
+        }
+
+        var filteredTestSet = new TestSet();
+        var filteredTestDescriptions = _testDescriptions.Values
+            .Where(testDesc => modeCompatibleAssemblies.Contains(testDesc.Case.Source))
+            .ToList();
+
+        filteredTestSet.RegisterTests(filteredTestDescriptions.Select(desc => desc.Description));
+        return filteredTestSet;
+    }
 
     public ITestRunResult InitialTest(IProjectAndTests project)
     {
-        _assemblyAnalyzer.AnalyzeSolution(project);
-        return _initialRunTestResult;
+        if (_initialRunTestResult == null)
+        {
+            return new TestRunResult(new List<IFrameworkTestDescription>(), TestIdentifierList.NoTest(),
+                TestIdentifierList.NoTest(), TestIdentifierList.NoTest(), string.Empty, new List<string>(), TimeSpan.Zero);
+        }
+
+        // Filter test run result based on the project's test assemblies and UnityTestMode
+        var projectTestAssemblies = project.GetTestAssemblies();
+        if (!projectTestAssemblies.Any())
+        {
+            return _initialRunTestResult;
+        }
+
+        // Get test assemblies that support the requested UnityTestMode
+        var modeCompatibleAssemblies = GetModeCompatibleAssemblies(projectTestAssemblies);
+        if (!modeCompatibleAssemblies.Any())
+        {
+            return new TestRunResult(new List<IFrameworkTestDescription>(), TestIdentifierList.NoTest(),
+                TestIdentifierList.NoTest(), TestIdentifierList.NoTest(), string.Empty, new List<string>(), TimeSpan.Zero);
+        }
+
+        var filteredTestDescriptions = _testDescriptions.Values
+            .Where(testDesc => modeCompatibleAssemblies.Contains(testDesc.Case.Source))
+            .ToList();
+
+        // Filter passed and failed tests to only include those from the project
+        var filteredPassedTests = FilterTestIdentifiers(_initialRunTestResult.ExecutedTests, modeCompatibleAssemblies);
+        var filteredFailedTests = FilterTestIdentifiers(_initialRunTestResult.FailingTests, modeCompatibleAssemblies);
+
+        return new TestRunResult(filteredTestDescriptions, filteredPassedTests, filteredFailedTests,
+            _initialRunTestResult.TimedOutTests, _initialRunTestResult.ResultMessage,
+            _initialRunTestResult.Messages, _initialRunTestResult.Duration);
     }
 
     public IEnumerable<ICoverageRunResult> CaptureCoverage(IProjectAndTests project) => [];
@@ -117,7 +181,9 @@ public class UnityTestRunner(
             }
             else
             {
-                logger.LogDebug("No relevant test assemblies found for mutants, running all tests");
+                testModeFromFilteredAssemblies = UnityTestMode.EditMode;
+                targetAssemblies = ["none"];
+                logger.LogDebug("No relevant test assemblies found for mutants, skip run");
             }
         }
 
@@ -231,6 +297,61 @@ public class UnityTestRunner(
                 return string.Empty;
             })
             .Where(msg => !string.IsNullOrWhiteSpace(msg));
+    }
+
+    private IReadOnlyList<string> GetModeCompatibleAssemblies(IReadOnlyList<string> projectTestAssemblies)
+    {
+        return projectTestAssemblies; //todo fix this
+
+        if (_assemblyAnalyzer == null || !projectTestAssemblies.Any())
+        {
+            return projectTestAssemblies;
+        }
+
+        var modeCompatibleAssemblies = new List<string>();
+
+        foreach (var assemblyName in projectTestAssemblies)
+        {
+            if (_assemblyAnalyzer.TryGetTestAssemblyInfo(assemblyName, out var testAssemblyInfo))
+            {
+                // Check if this assembly supports the requested UnityTestMode
+                if (testAssemblyInfo.SupportedModes.HasFlag(strykerOptions.UnityTestMode))
+                {
+                    modeCompatibleAssemblies.Add(assemblyName);
+                }
+            }
+        }
+
+        return modeCompatibleAssemblies;
+    }
+
+    private ITestIdentifiers FilterTestIdentifiers(ITestIdentifiers testIdentifiers, IReadOnlyList<string> projectTestAssemblies)
+    {
+        if (testIdentifiers == null || testIdentifiers.IsEmpty)
+        {
+            return TestIdentifierList.NoTest();
+        }
+
+        // If it's "EveryTest", we need to check if all tests in the project are included
+        if (testIdentifiers.IsEveryTest)
+        {
+            // Check if all project tests are in our test set
+            var projectTestIds = _testDescriptions.Values
+                .Where(testDesc => projectTestAssemblies.Contains(testDesc.Case.Source))
+                .Select(testDesc => testDesc.Id)
+                .ToList();
+
+            var allProjectTestsInSet = projectTestIds.All(id => _testDescriptions.ContainsKey(id));
+            return allProjectTestsInSet ? TestIdentifierList.EveryTest() : new TestIdentifierList(projectTestIds);
+        }
+
+        // For specific test lists, filter to only include tests from the project
+        var filteredIds = testIdentifiers.GetIdentifiers()
+            .Where(id => _testDescriptions.TryGetValue(id, out var testDesc) &&
+                        projectTestAssemblies.Contains(testDesc.Case.Source))
+            .ToList();
+
+        return filteredIds.Count == _testSet.Count ? TestIdentifierList.EveryTest() : new TestIdentifierList(filteredIds);
     }
 
     private void CleanupTestArtifacts()
