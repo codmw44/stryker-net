@@ -21,13 +21,11 @@ public class UnityTestAssemblyAnalyzer
 {
     private readonly Dictionary<string, UnityTestAssemblyInfo> _testAssemblies = new();
     private readonly Dictionary<string, List<string>> _assemblyReferences = new();
-    private MutantAssemblyMapper _mutantAssemblyMapper;
+    private UnityAssemblyMapper _unityAssemblyMapper;
 
     public void AnalyzeSolution(IProjectAndTests project)
     {
-        // Initialize and build the mutant assembly mapper
-        _mutantAssemblyMapper = new MutantAssemblyMapper();
-        _mutantAssemblyMapper.BuildMapping(project);
+        _unityAssemblyMapper = new UnityAssemblyMapper();
 
         // Get test project analyzer results
         if (project.TestProjectsInfo?.AnalyzerResults != null)
@@ -170,7 +168,7 @@ public class UnityTestAssemblyAnalyzer
         foreach (var mutant in mutants)
         {
             // Get the assembly that contains this mutant
-            var mutantAssembly = _mutantAssemblyMapper?.GetAssemblyForMutant(mutant);
+            var mutantAssembly = _unityAssemblyMapper?.GetAssemblyForMutant(mutant);
             if (!string.IsNullOrEmpty(mutantAssembly))
             {
                 // Find test assemblies that reference this assembly

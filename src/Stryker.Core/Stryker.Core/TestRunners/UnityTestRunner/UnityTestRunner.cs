@@ -23,7 +23,7 @@ public class UnityTestRunner(
     private TestSet _testSet;
     private Dictionary<string, IFrameworkTestDescription> _testDescriptions = new();
     private UnityTestAssemblyAnalyzer _assemblyAnalyzer= new UnityTestAssemblyAnalyzer();
-    private MutantAssemblyMapper _mutantAssemblyMapper = new MutantAssemblyMapper();
+    private UnityAssemblyMapper _unityAssemblyMapper = new UnityAssemblyMapper();
 
     public bool DiscoverTests(string assembly)
     {
@@ -71,7 +71,6 @@ public class UnityTestRunner(
     public ITestRunResult InitialTest(IProjectAndTests project)
     {
         _assemblyAnalyzer.AnalyzeSolution(project);
-        _mutantAssemblyMapper.BuildMapping(project);
         return _initialRunTestResult;
     }
 

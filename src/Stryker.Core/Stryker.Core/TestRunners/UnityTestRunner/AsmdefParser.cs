@@ -64,4 +64,15 @@ public static class AsmdefParser
             return false;
         }
     }
+
+    public static string GetAssemblyName(string asmdefPath)
+    {
+        //we should use name from asmdef instead of file name because file name can missmatch with assembly name
+
+        var json = File.ReadAllText(asmdefPath);
+        using var document = JsonDocument.Parse(json);
+        var root = document.RootElement;
+
+        return root.TryGetProperty("name", out var name) ? name.GetString() : null;
+    }
 }
