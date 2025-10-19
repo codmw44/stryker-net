@@ -51,19 +51,9 @@ namespace Stryker
                 RegisterCoverage(id);
                 return false;
             }
-            if (ActiveMutant == ActiveMutantNotInitValue)
+            if (File.Exists(_pathToListenActiveMutation))
             {
-                if (File.Exists(_pathToListenActiveMutation))
-                {
-                    ActiveMutant = int.Parse(File.ReadAllText(_pathToListenActiveMutation));
-                }
-                else
-                {
-#if UNITY_EDITOR
-                    //todo required only for very deep debug
-                    //System.Console.WriteLine("[Stryker] _pathToListenActiveMutation is " + _pathToListenActiveMutation + " but it doesn't exist.");
-#endif
-                }
+                ActiveMutant = int.Parse(File.ReadAllText(_pathToListenActiveMutation));
             }
 
             return id == ActiveMutant;
