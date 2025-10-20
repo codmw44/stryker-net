@@ -75,14 +75,12 @@ public class UnityTestRunner(
             return new TestSet();
         }
 
-        // Filter tests based on the project's test assemblies and UnityTestMode
         var projectTestAssemblies = project.GetTestAssemblies();
         if (!projectTestAssemblies.Any())
         {
             return _testSet;
         }
 
-        // Get test assemblies that support the requested UnityTestMode
         var modeCompatibleAssemblies = GetModeCompatibleAssemblies(projectTestAssemblies);
         if (!modeCompatibleAssemblies.Any())
         {
@@ -106,14 +104,12 @@ public class UnityTestRunner(
                 TestIdentifierList.NoTest(), TestIdentifierList.NoTest(), string.Empty, new List<string>(), TimeSpan.Zero);
         }
 
-        // Filter test run result based on the project's test assemblies and UnityTestMode
         var projectTestAssemblies = project.GetTestAssemblies();
         if (!projectTestAssemblies.Any())
         {
             return _initialRunTestResult;
         }
 
-        // Get test assemblies that support the requested UnityTestMode
         var modeCompatibleAssemblies = GetModeCompatibleAssemblies(projectTestAssemblies);
         if (!modeCompatibleAssemblies.Any())
         {
@@ -297,8 +293,6 @@ public class UnityTestRunner(
 
     private IReadOnlyList<string> GetModeCompatibleAssemblies(IReadOnlyList<string> projectTestAssemblies)
     {
-        return projectTestAssemblies; //todo fix this
-
         if (_assemblyAnalyzer == null || !projectTestAssemblies.Any())
         {
             return projectTestAssemblies;
@@ -310,8 +304,7 @@ public class UnityTestRunner(
         {
             if (_assemblyAnalyzer.TryGetTestAssemblyInfo(assemblyName, out var testAssemblyInfo))
             {
-                // Check if this assembly supports the requested UnityTestMode
-                if (testAssemblyInfo.SupportedModes.HasFlag(strykerOptions.UnityTestMode))
+                if (strykerOptions.UnityTestMode.HasFlag(testAssemblyInfo.SupportedModes))
                 {
                     modeCompatibleAssemblies.Add(assemblyName);
                 }
