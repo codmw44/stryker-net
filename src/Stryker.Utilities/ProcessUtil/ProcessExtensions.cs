@@ -8,9 +8,9 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.InteropServices;
-using Stryker.Configuration;
+using Stryker.Abstractions;
 
-namespace Stryker.Core.Helpers.ProcessUtil;
+namespace Stryker.Utilities.ProcessUtil;
 
 // integration with OS
 [ExcludeFromCodeCoverage]
@@ -52,7 +52,7 @@ internal static class ProcessExtensions
             timeout,
             out var stdout);
 
-        if (exitCode != ExitCodes.Success || string.IsNullOrEmpty(stdout))
+        if (exitCode != 0 || string.IsNullOrEmpty(stdout))
         {
             return;
         }

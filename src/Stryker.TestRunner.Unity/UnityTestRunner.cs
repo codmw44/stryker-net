@@ -7,13 +7,13 @@ using Microsoft.Extensions.Logging;
 using Stryker.Abstractions;
 using Stryker.Abstractions.Options;
 using Stryker.Abstractions.Testing;
-using Stryker.Core.TestRunners.UnityTestRunner.RunUnity;
+using Stryker.TestRunner.Unity.RunUnity;
 using Stryker.TestRunner.Results;
 using Stryker.TestRunner.Tests;
 using Stryker.TestRunner.VsTest;
 using Stryker.Utilities.Buildalyzer;
 
-namespace Stryker.Core.TestRunners.UnityTestRunner;
+namespace Stryker.TestRunner.Unity;
 
 public class UnityTestRunner(
     IStrykerOptions strykerOptions,

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Xml.Linq;
 using Stryker.Abstractions.Options;
 
-namespace Stryker.Core.TestRunners.UnityTestRunner.RunUnity;
+namespace Stryker.TestRunner.Unity.RunUnity;
 
 public interface IRunUnity : IDisposable
 {

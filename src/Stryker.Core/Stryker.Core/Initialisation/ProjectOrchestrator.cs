@@ -15,7 +15,7 @@ using Stryker.Abstractions.Reporting;
 using Stryker.Abstractions.Testing;
 using Stryker.Core.MutationTest;
 using Stryker.Core.ProjectComponents.SourceProjects;
-using Stryker.Core.TestRunners.UnityTestRunner.RunUnity;
+using Stryker.TestRunner.Unity.RunUnity;
 using Stryker.TestRunner.VsTest;
 using Stryker.Utilities.Logging;
 

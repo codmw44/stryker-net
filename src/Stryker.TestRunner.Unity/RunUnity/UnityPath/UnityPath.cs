@@ -4,7 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using Stryker.Abstractions.Options;
 
-namespace Stryker.Core.TestRunners.UnityTestRunner.RunUnity.UnityPath;
+namespace Stryker.TestRunner.Unity.RunUnity.UnityPath;
 
 public class UnityPath(IFileSystem fileSystem) : IUnityPath
 {

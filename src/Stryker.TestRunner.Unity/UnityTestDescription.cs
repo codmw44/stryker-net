@@ -1,7 +1,7 @@
 using System;
 using Stryker.Abstractions.Testing;
 
-namespace Stryker.Core.TestRunners.UnityTestRunner;
+namespace Stryker.TestRunner.Unity;
 
 public sealed class UnityTestDescription(ITestDescription description, ITestCase testCase) : IFrameworkTestDescription
 {

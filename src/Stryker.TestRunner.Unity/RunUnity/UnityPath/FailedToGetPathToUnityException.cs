@@ -1,6 +1,6 @@
 using System;
 
-namespace Stryker.Core.TestRunners.UnityTestRunner.RunUnity.UnityPath;
+namespace Stryker.TestRunner.Unity.RunUnity.UnityPath;
 
 public class FailedToGetPathToUnityException : Exception
 {

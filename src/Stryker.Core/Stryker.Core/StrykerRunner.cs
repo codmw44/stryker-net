@@ -16,9 +16,9 @@ using Stryker.Core.ProjectComponents;
 using Stryker.Core.ProjectComponents.TestProjects;
 using Stryker.Core.Reporters;
 using Stryker.Utilities.Logging;
-using Stryker.Core.TestRunners.UnityTestRunner;
-using Stryker.Core.TestRunners.UnityTestRunner.RunUnity;
-using Stryker.Core.TestRunners.UnityTestRunner.RunUnity.UnityPath;
+using Stryker.TestRunner.Unity;
+using Stryker.TestRunner.Unity.RunUnity;
+using Stryker.TestRunner.Unity.RunUnity.UnityPath;
 
 namespace Stryker.Core;
 

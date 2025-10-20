@@ -3,7 +3,7 @@ using System.IO;
 using System.IO.Abstractions;
 using Microsoft.Extensions.Logging;
 using Stryker.Configuration;
-using Stryker.Core.Helpers.ProcessUtil;
+using Stryker.Utilities.ProcessUtil;
 using Stryker.Utilities.Logging;
 
 namespace Stryker.Core.Helpers;

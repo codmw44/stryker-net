@@ -2,7 +2,7 @@ using System.IO;
 using System.Text.Json;
 using Stryker.Abstractions.Options;
 
-namespace Stryker.Core.TestRunners.UnityTestRunner;
+namespace Stryker.TestRunner.Unity;
 
 public static class AsmdefParser
 {

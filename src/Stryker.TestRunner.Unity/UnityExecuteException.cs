@@ -1,6 +1,6 @@
 using System;
 
-namespace Stryker.Core.TestRunners.UnityTestRunner;
+namespace Stryker.TestRunner.Unity;
 
 public class UnityExecuteException : Exception
 {

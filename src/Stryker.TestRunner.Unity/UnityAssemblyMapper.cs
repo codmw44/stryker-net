@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using Stryker.Abstractions;
 
-namespace Stryker.Core.TestRunners.UnityTestRunner;
+namespace Stryker.TestRunner.Unity;
 
 public class UnityAssemblyMapper
 {

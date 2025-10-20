@@ -9,11 +9,11 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
 using Stryker.Abstractions.Options;
-using Stryker.Core.Helpers.ProcessUtil;
-using Stryker.Core.TestRunners.UnityTestRunner.RunUnity.UnityPath;
+using Stryker.Utilities.ProcessUtil;
+using Stryker.TestRunner.Unity.RunUnity.UnityPath;
 using Stryker.Utilities.Logging;
 
-namespace Stryker.Core.TestRunners.UnityTestRunner.RunUnity;
+namespace Stryker.TestRunner.Unity.RunUnity;
 
 public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, ILogger logger) : IRunUnity
 {

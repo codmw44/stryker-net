@@ -7,7 +7,7 @@ using Stryker.Abstractions;
 using Stryker.Abstractions.Options;
 using Stryker.Utilities.Buildalyzer;
 
-namespace Stryker.Core.TestRunners.UnityTestRunner;
+namespace Stryker.TestRunner.Unity;
 
 public class UnityTestAssemblyInfo
 {

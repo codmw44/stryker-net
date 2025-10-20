@@ -815,6 +815,18 @@
           "Stryker.Abstractions": "[4.8.1, )"
         }
       },
+      "stryker.testrunner.unity": {
+        "type": "Project",
+        "dependencies": {
+          "Buildalyzer": "[7.1.0, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[9.0.10, )",
+          "Stryker.Abstractions": "[4.8.1, )",
+          "Stryker.TestRunner": "[4.8.1, )",
+          "Stryker.TestRunner.VsTest": "[4.8.1, )",
+          "Stryker.Utilities": "[4.8.1, )",
+          "TestableIO.System.IO.Abstractions.Wrappers": "[22.0.16, )"
+        }
+      },
       "stryker.testrunner.vstest": {
         "type": "Project",
         "dependencies": {
