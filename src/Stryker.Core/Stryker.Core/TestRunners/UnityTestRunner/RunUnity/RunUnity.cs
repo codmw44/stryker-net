@@ -28,6 +28,7 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
     private string _pathToActiveMutantsListenFile;
     private Task _unityProcessTask;
     private Process _unityProcess;
+    private bool _wasUnityStartedAtLeastOnce = false;
 
     public static RunUnity GetSingleInstance(Func<IProcessExecutor> processExecutor = null,
         Func<IUnityPath> unityPath = null,
@@ -199,6 +200,11 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
     private void TryOpenUnity(IStrykerOptions strykerOptions, string projectPath,
         string additionalArgumentsForCli = null)
     {
+        if (!_wasUnityStartedAtLeastOnce)
+        {
+            RemoveScriptAssembliesDirectory(projectPath);
+            _wasUnityStartedAtLeastOnce = true;
+        }
         ThrowExceptionIfExists();
 
         if (_unityInProgress && _currentUnityRunArguments != GetArgumentsToRun(projectPath, additionalArgumentsForCli))
@@ -390,23 +396,16 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
     {
         var scriptAssembliesPath = Path.Combine(projectPath, "Library", "ScriptAssemblies");
 
-        return; //todo remove it.  It was made because it freezes
         if (Directory.Exists(scriptAssembliesPath))
         {
             try
             {
                 Directory.Delete(scriptAssembliesPath, true);
-                Directory.CreateDirectory(scriptAssembliesPath);
-                logger.LogInformation("Successfully removed Library/ScriptAssemblies directory");
             }
             catch (Exception ex)
             {
                 logger.LogWarning(ex, "Failed to remove Library/ScriptAssemblies directory: {0}", scriptAssembliesPath);
             }
-        }
-        else
-        {
-            logger.LogDebug("Library/ScriptAssemblies directory does not exist: {0}", scriptAssembliesPath);
         }
     }
 

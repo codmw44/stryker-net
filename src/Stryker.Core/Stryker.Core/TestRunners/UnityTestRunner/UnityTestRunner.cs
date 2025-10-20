@@ -30,13 +30,9 @@ public class UnityTestRunner(
     {
         if (_testSet == null)
         {
-            //Required to have fresh not modified dlls
-            runUnity.RemoveScriptAssembliesDirectory(strykerOptions.WorkingDirectory);
-
-            var testResultsXml = RunTests(out var duration);
+            var testResultsXml = RunTests(out var duration, testMode: strykerOptions.UnityTestMode);
 
             _assemblyAnalyzer.AnalyzeProject(assembly);
-
 
             _testSet = new TestSet();
             _testDescriptions = testResultsXml
