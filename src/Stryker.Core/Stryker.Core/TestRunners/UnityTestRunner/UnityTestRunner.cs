@@ -81,7 +81,7 @@ public class UnityTestRunner(
             return _testSet;
         }
 
-        var modeCompatibleAssemblies = GetModeCompatibleAssemblies(projectTestAssemblies);
+        var modeCompatibleAssemblies = projectTestAssemblies;
         if (!modeCompatibleAssemblies.Any())
         {
             return new TestSet();
@@ -110,7 +110,7 @@ public class UnityTestRunner(
             return _initialRunTestResult;
         }
 
-        var modeCompatibleAssemblies = GetModeCompatibleAssemblies(projectTestAssemblies);
+        var modeCompatibleAssemblies = projectTestAssemblies;
         if (!modeCompatibleAssemblies.Any())
         {
             return new TestRunResult(new List<IFrameworkTestDescription>(), TestIdentifierList.NoTest(),
@@ -289,29 +289,6 @@ public class UnityTestRunner(
                 return string.Empty;
             })
             .Where(msg => !string.IsNullOrWhiteSpace(msg));
-    }
-
-    private IReadOnlyList<string> GetModeCompatibleAssemblies(IReadOnlyList<string> projectTestAssemblies)
-    {
-        if (_assemblyAnalyzer == null || !projectTestAssemblies.Any())
-        {
-            return projectTestAssemblies;
-        }
-
-        var modeCompatibleAssemblies = new List<string>();
-
-        foreach (var assemblyName in projectTestAssemblies)
-        {
-            if (_assemblyAnalyzer.TryGetTestAssemblyInfo(assemblyName, out var testAssemblyInfo))
-            {
-                if (strykerOptions.UnityTestMode.HasFlag(testAssemblyInfo.SupportedModes))
-                {
-                    modeCompatibleAssemblies.Add(assemblyName);
-                }
-            }
-        }
-
-        return modeCompatibleAssemblies;
     }
 
     private ITestIdentifiers FilterTestIdentifiers(ITestIdentifiers testIdentifiers, IReadOnlyList<string> projectTestAssemblies)
