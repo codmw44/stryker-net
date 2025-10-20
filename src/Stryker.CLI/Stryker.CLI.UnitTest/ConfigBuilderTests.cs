@@ -8,6 +8,7 @@ using Stryker.Abstractions;
 using Stryker.Abstractions.Options.Inputs;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Stryker.Abstractions.Options;
+using Stryker.Core.Options.Inputs;
 
 namespace Stryker.CLI.UnitTest;
 
@@ -201,6 +202,9 @@ public class ConfigBuilderTests
         inputs.Setup(x => x.DashboardApiKeyInput).Returns(new DashboardApiKeyInput());
         inputs.Setup(x => x.AzureFileStorageSasInput).Returns(new AzureFileStorageSasInput());
         inputs.Setup(x => x.DevModeInput).Returns(new DevModeInput());
+        inputs.Setup(x => x.UnityTestModeInput).Returns(new UnityTestModeInput());
+        inputs.Setup(x => x.PathToUnityInput).Returns(new PathToUnityInput());
+        inputs.Setup(x => x.UnityMemoryConsumptionLimitInMbInput).Returns(new UnityMemoryConsumptionLimitInMbInput());
 
         inputs.Setup(x => x.SinceInput).Returns(new SinceInput());
         inputs.Setup(x => x.BaselineProviderInput).Returns(new BaselineProviderInput());

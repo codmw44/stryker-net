@@ -192,7 +192,7 @@ public class CommandLineConfigReader
         AddCliInput(inputs.TestProjectsInput, "test-project", "tp", CommandOptionType.MultipleValue, InputCategory.Build);
         AddCliInput(inputs.MsBuildPathInput, "msbuild-path", null, category: InputCategory.Build);
         AddCliInput(inputs.TargetFrameworkInput, "target-framework", null, optionType: CommandOptionType.SingleValue, category: InputCategory.Build);
-        AddCliInput(inputs.PathToUnityInput, "path-to-unity", null, category: InputCategory.Build);
+        AddCliInput(inputs.PathToUnityInput, "path-to-unity", null,  argumentHint: "unity-path", category: InputCategory.Build);
         AddCliInput(inputs.UnityMemoryConsumptionLimitInMbInput, "unity-memory-limit", null, argumentHint: "megabytes", category: InputCategory.Build);
         AddCliInput(inputs.UnityTestModeInput, "unity-test-mode", null, argumentHint: "All,PlayMode,EditMode", category: InputCategory.Build);
 
