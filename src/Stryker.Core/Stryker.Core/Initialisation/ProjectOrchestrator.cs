@@ -76,14 +76,9 @@ public sealed class ProjectOrchestrator : IProjectOrchestrator
         var inputs = _initializationProcess.GetMutationTestInputs(options, projectInfos, _runner);
 
         var mutationTestProcesses = new ConcurrentBag<IMutationTestProcess>();
-        foreach (var mutationTestInput in inputs)
-        {
-            mutationTestProcesses.Add(_projectMutator.MutateProject(options, mutationTestInput, reporters));
-        }
         Parallel.ForEach(inputs, mutationTestInput =>
         {
-            // todo fix parallel exec for unity
-            // mutationTestProcesses.Add(_projectMutator.MutateProject(options, mutationTestInput, reporters));
+            mutationTestProcesses.Add(_projectMutator.MutateProject(options, mutationTestInput, reporters));
         });
         return mutationTestProcesses;
     }

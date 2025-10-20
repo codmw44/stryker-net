@@ -353,9 +353,8 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
                     insertPosition = manifestContent.IndexOf("\"dependencies\": {", StringComparison.Ordinal) + "\"dependencies\": {".Length;
 
                     // Add the package to dependencies
-                    //todo replace it to https git and original repo
                     var packageEntry =
-                        "\n    \"com.stryker.unity\": \"https://github.com/codmw44/stryker-net.git?path=src/Stryker.UnitySDK#feature/add_unity_support\",";
+                        "\n    \"com.stryker.unity\": \"https://github.com/codmw44/stryker-mutator/stryker-net.git?path=src/Stryker.UnitySDK#master\",";
 
                     // If there are already dependencies, add a comma to the new entry
                     if (manifestContent.Substring(insertPosition).TrimStart().StartsWith("\""))
