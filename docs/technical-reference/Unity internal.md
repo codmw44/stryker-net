@@ -87,12 +87,8 @@ Basically we can detect test assemblies only by .asmdef files and their referenc
 ## Known limitations
 
 ### Not support code coverage
-Unity has [Code Coverage Plugin](https://docs.unity3d.com/Packages/com.unity.testtools.codecoverage@1.2/manual/index.html) but it's not really used much and support is limited.
-I faced with issue of configuring code coverage from C# code. Need to configure output path, result format, enable/disable it.
-It doesn't have public api for this (all is internal), or CLI parameters (which would require to rerun unity every time) or gui setup.
-Here are alternative of using UnityEditor.SettingsManagement.Settings but I didn't find source code to find proper way to change settings like at CoveragePreferences.
-
-Another option is to embed code coverage plugin and modify it to make it public and editable from C# code. Con of this decision is to support it from our side with all changes and updates.
+Stryker use kind of callbacks from VsTest which allow to get code coverage stats during run. But Unity Test Runner doesn't support it this way
+And this system have to be reimplemented for Unity by Using Stryker.UnitySDK and callbacks from it
 
 ### Not support concurrency
 We cannot run tests out If Unity Test Runner which is required Unity to Run. Therefore to run tests in prallel we need to run second/third Unity instance.
@@ -107,11 +103,6 @@ Here are the main difficulty and trade off to consider
 ### Not support test case filters
 Test case filters is not supported by Unity Test Runner the same way as it's for `dotnet test --filter`. Unity has less options and more traditional way to setup
 [Link to documentation](https://docs.unity3d.com/Packages/com.unity.test-framework@1.6/api/UnityEditor.TestTools.TestRunner.Api.Filter.html#methods)
-
-### Lack of full test statistic
-As I understand, it is because of lack of data for tests at TestRunResult. I checked how much data VSTest submited here and was shocked because UnityTestRunner has provided very tiny amount of information about each test
-Here is the PR that added the original functionality: #1850
-But I still didn't able to make it life
 
 ## Documentation links
 - [Unity Test Runner](https://docs.unity3d.com/Packages/com.unity.test-framework@2.0/manual/index.html)
