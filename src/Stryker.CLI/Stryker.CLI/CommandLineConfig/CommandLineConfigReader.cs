@@ -197,22 +197,21 @@ public class CommandLineConfigReader
         AddCliInput(inputs.UnityTestModeInput, "unity-test-mode", null, argumentHint: "All,PlayMode,EditMode", category: InputCategory.Build);
 
         // Category: Mutation
-        AddCliInput(inputs.MutateInput, "mutate", "m", CommandOptionType.MultipleValue, argumentHint: "glob-pattern", category: InputCategory.Mutation);
+        AddCliInput(inputs.MutateInput, "mutate", "m", optionType: CommandOptionType.MultipleValue, argumentHint: "glob-pattern", category: InputCategory.Mutation);
         AddCliInput(inputs.MutationLevelInput, "mutation-level", "l", category: InputCategory.Mutation);
-        AddCliInput(inputs.SinceInput, "since", "", CommandOptionType.SingleOrNoValue, argumentHint: "committish", category: InputCategory.Mutation);
-        AddCliInput(inputs.WithBaselineInput, "with-baseline", "", CommandOptionType.SingleOrNoValue, argumentHint: "committish",
-            category: InputCategory.Mutation);
+        AddCliInput(inputs.SinceInput, "since", "", optionType: CommandOptionType.SingleOrNoValue, argumentHint: "committish", category: InputCategory.Mutation);
+        AddCliInput(inputs.WithBaselineInput, "with-baseline", "", optionType: CommandOptionType.SingleOrNoValue, argumentHint: "committish", category: InputCategory.Mutation);
         // Category: Reporting
         AddCliInput(inputs.OpenReportInput, "open-report", "o", CommandOptionType.SingleOrNoValue, argumentHint: "report-type",
             category: InputCategory.Reporting);
-        AddCliInput(inputs.ReportersInput, "reporter", "r", CommandOptionType.MultipleValue, InputCategory.Reporting);
+        AddCliInput(inputs.ReportersInput, "reporter", "r", optionType: CommandOptionType.MultipleValue, category: InputCategory.Reporting);
         AddCliInput(inputs.ProjectVersionInput, "version", "v", category: InputCategory.Reporting);
         AddCliInput(inputs.DashboardApiKeyInput, "dashboard-api-key", null, category: InputCategory.Reporting);
         AddCliInput(inputs.AzureFileStorageSasInput, "azure-fileshare-sas", null, category: InputCategory.Reporting);
-        AddCliInput(inputs.OutputPathInput, "output", "O", CommandOptionType.SingleValue, InputCategory.Reporting);
+        AddCliInput(inputs.OutputPathInput, "output", "O", optionType: CommandOptionType.SingleValue, category: InputCategory.Reporting);
         // Category: Misc
-        AddCliInput(inputs.BreakOnInitialTestFailureInput, "break-on-initial-test-failure", null, CommandOptionType.NoValue, InputCategory.Misc);
-        AddCliInput(inputs.DevModeInput, "dev-mode", null, CommandOptionType.NoValue, InputCategory.Misc);
+        AddCliInput(inputs.BreakOnInitialTestFailureInput, "break-on-initial-test-failure", null, optionType: CommandOptionType.NoValue, category: InputCategory.Misc);
+        AddCliInput(inputs.DevModeInput, "dev-mode", null, optionType: CommandOptionType.NoValue, category: InputCategory.Misc);
         }
 
     private void RegisterCliInput(CommandLineApplication app, CliInput option)

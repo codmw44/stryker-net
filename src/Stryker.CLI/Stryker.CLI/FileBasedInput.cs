@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Stryker.Abstractions.Options;
 using YamlDotNet.Serialization;
 
 namespace Stryker.CLI;
@@ -47,7 +48,13 @@ public class FileBasedInput : IExtraData
     public string TargetFramework { get; init; }
 
     [JsonPropertyName("path-to-unity")]
-        public string PathToUnity { get; init; }
+    public string? PathToUnity { get; init; }
+
+    [JsonPropertyName("unity-memory-limit")]
+    public int UnityMemoryConsumptionLimitInMb { get; init; }
+
+    [JsonPropertyName("unity-test-mode")]
+    public string? UnityTestMode { get; init; }
 
     [JsonPropertyName("project")]
     public string Project { get; init; }

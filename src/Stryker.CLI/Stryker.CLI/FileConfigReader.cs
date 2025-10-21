@@ -57,6 +57,8 @@ public static class FileConfigReader
         inputs.ConfigurationInput.SuppliedInput = config.Configuration;
         inputs.TargetFrameworkInput.SuppliedInput = config.TargetFramework;
         inputs.PathToUnityInput.SuppliedInput = config.PathToUnity;
+        inputs.UnityMemoryConsumptionLimitInMbInput.SuppliedInput = config.UnityMemoryConsumptionLimitInMb;
+        inputs.UnityTestModeInput.SuppliedInput = config.UnityTestMode;
 
         inputs.SourceProjectNameInput.SuppliedInput = config.Project;
         inputs.ThresholdBreakInput.SuppliedInput = config.Thresholds?.Break;

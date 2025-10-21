@@ -11,7 +11,6 @@ namespace Stryker.UnitySDK
             var pattern = new Regex(@"<OutputPath>.*<\/OutputPath>", RegexOptions.Compiled);
             var updatedCsProjContent = pattern.Replace(content,
                 _ => @"<OutputPath>Library\ScriptAssemblies\</OutputPath>");
-            Debug.Log(path + " was updated OutputPath");
             return updatedCsProjContent;
         }
     }

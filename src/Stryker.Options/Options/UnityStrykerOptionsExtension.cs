@@ -12,9 +12,7 @@ public static class UnityStrykerOptionsExtension
             return false;
 
         var path = options.GetUnityProjectDirectory();
-
-        var directories = Directory.GetDirectories(path);
-        return directories.Contains(Path.Combine(path, "Assets")) && directories.Contains(Path.Combine(path, "Packages")) && directories.Contains(Path.Combine(path, "ProjectSettings"));
+        return path.IsUnitProjectInternal();
     }
 
     public static bool IsUnityProject(this string basePath)
@@ -23,7 +21,11 @@ public static class UnityStrykerOptionsExtension
             return false;
 
         var path = basePath.GetUnityProjectDirectory();
+        return path.IsUnitProjectInternal();
+    }
 
+    private static bool IsUnitProjectInternal(this string path)
+    {
         var directories = Directory.GetDirectories(path);
         return directories.Contains(Path.Combine(path, "Assets")) && directories.Contains(Path.Combine(path, "Packages")) && directories.Contains(Path.Combine(path, "ProjectSettings"));
     }
