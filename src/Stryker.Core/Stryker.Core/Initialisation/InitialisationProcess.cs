@@ -175,7 +175,7 @@ public class InitialisationProcess : IInitialisationProcess
     {
         foreach (var testProject in projectInfo.TestProjectsInfo.AnalyzerResults)
         {
-            if (testRunner.DiscoverTests(testProject))
+            if (testRunner.DiscoverTests(testProject, projectInfo.TestProjectsInfo))
             {
                 continue;
             }

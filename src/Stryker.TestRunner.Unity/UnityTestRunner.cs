@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 using Buildalyzer;
 using Microsoft.Extensions.Logging;
 using Stryker.Abstractions;
 using Stryker.Abstractions.Options;
+using Stryker.Abstractions.ProjectComponents;
 using Stryker.Abstractions.Testing;
 using Stryker.TestRunner.Unity.RunUnity;
 using Stryker.TestRunner.Results;
@@ -26,7 +28,7 @@ public class UnityTestRunner(
     private Dictionary<string, IFrameworkTestDescription> _testDescriptions = new();
     private readonly UnityTestAssemblyAnalyzer _assemblyAnalyzer = new();
 
-    public bool DiscoverTests(IAnalyzerResult assembly)
+    public bool DiscoverTests(IAnalyzerResult assembly, ITestProjectsInfo projectInfoTestProjectsInfo)
     {
         if (_testSet == null)
         {
@@ -34,6 +36,7 @@ public class UnityTestRunner(
 
             _assemblyAnalyzer.AnalyzeProject(assembly);
 
+            var allTestSourceFilePaths = projectInfoTestProjectsInfo.AnalyzerResults.SelectMany(res => res.SourceFiles);
             _testSet = new TestSet();
             _testDescriptions = testResultsXml
                 .Descendants("test-case")
@@ -49,8 +52,10 @@ public class UnityTestRunner(
                         .FirstOrDefault(ancestor => ancestor.Attribute("type")?.Value == "Assembly")
                         ?.Attribute("fullname")?.Value ?? string.Empty;
 
+                    var codeFilePath = allTestSourceFilePaths.FirstOrDefault(path => File.ReadAllText(path).Contains(name));
+                    var lineNumber = codeFilePath == null ? 1 : File.ReadAllLines(codeFilePath).TakeWhile(line => !line.Contains(name)).Count();
                     var testDescription = new TestDescription(id, name, fullname);
-                    var testCase = new UnityTestCase(id, name, fullname, assemblyPath) { };
+                    var testCase = new UnityTestCase(id, name, fullname, assemblyPath, codeFilePath, lineNumber);
                     return new UnityTestDescription(testDescription, testCase);
                 })
                 .DistinctBy(element => element.Id).ToDictionary(element => element.Id, IFrameworkTestDescription (element) => element);
@@ -187,7 +192,6 @@ public class UnityTestRunner(
             update?.Invoke(mutants, failedTests, TestIdentifierList.EveryTest(), GetTimeoutTestGuidsList());
 
         if (remainingMutants == false)
-            // all mutants status have been resolved, we can stop
             logger.LogDebug("Each mutant's fate has been established, we can stop.");
 
         _firstMutationTestStarted = true;
@@ -216,9 +220,7 @@ public class UnityTestRunner(
         var ids = testResultsXml.Descendants("test-case")
             .Where(element => element.Attribute("result").Value == "Passed")
             .Select(element => element.Attribute("id").Value);
-        var passedTests = ids.Count() == _testSet.Count
-            ? TestIdentifierList.EveryTest()
-            : new TestIdentifierList(_testSet.Extract(ids));
+        var passedTests = new TestIdentifierList(_testSet.Extract(ids));
 
         return passedTests;
     }
@@ -228,9 +230,7 @@ public class UnityTestRunner(
         var ids = testResultsXml.Descendants("test-case")
             .Where(element => element.Attribute("result").Value == "Failed")
             .Select(element => element.Attribute("id").Value);
-        var failedTests = ids.Count() == _testSet.Count
-            ? TestIdentifierList.EveryTest()
-            : new TestIdentifierList(_testSet.Extract(ids));
+        var failedTests = new TestIdentifierList(_testSet.Extract(ids));
 
         return failedTests;
     }
@@ -307,8 +307,7 @@ public class UnityTestRunner(
                 .Select(testDesc => testDesc.Id)
                 .ToList();
 
-            var allProjectTestsInSet = projectTestIds.All(id => _testDescriptions.ContainsKey(id));
-            return allProjectTestsInSet ? TestIdentifierList.EveryTest() : new TestIdentifierList(projectTestIds);
+            return new TestIdentifierList(projectTestIds);
         }
 
         // For specific test lists, filter to only include tests from the project
@@ -317,7 +316,7 @@ public class UnityTestRunner(
                         projectTestAssemblies.Contains(testDesc.Case.Source))
             .ToList();
 
-        return filteredIds.Count == _testSet.Count ? TestIdentifierList.EveryTest() : new TestIdentifierList(filteredIds);
+        return new TestIdentifierList(filteredIds);
     }
 
     private void CleanupTestArtifacts()

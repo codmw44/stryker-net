@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Stryker.Abstractions;
 using Stryker.Abstractions.Options;
+using Stryker.Abstractions.ProjectComponents;
 using Stryker.Abstractions.Testing;
 using Stryker.TestRunner.Results;
 using Stryker.TestRunner.Tests;
@@ -55,7 +56,7 @@ public sealed class VsTestRunnerPool : ITestRunner
         Initialize();
     }
 
-    public bool DiscoverTests(IAnalyzerResult assembly) => Context.AddTestSource(assembly.GetAssemblyPath());
+    public bool DiscoverTests(IAnalyzerResult assembly, ITestProjectsInfo projectInfoTestProjectsInfo) => Context.AddTestSource(assembly.GetAssemblyPath());
 
     public ITestSet GetTests(IProjectAndTests project) => Context.GetTestsForSources(project.GetTestAssemblies());
 

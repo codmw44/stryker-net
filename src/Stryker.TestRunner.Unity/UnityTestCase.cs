@@ -5,15 +5,15 @@ namespace Stryker.TestRunner.Unity;
 
 public sealed class UnityTestCase : ITestCase
 {
-    public UnityTestCase(string id, string name, string fullyQualifiedName, string source)
+    public UnityTestCase(string id, string name, string fullyQualifiedName, string source, string codeFilePath, int lineNumber)
     {
         Id = id;
         Guid = System.Guid.TryParse(id, out var guid) ? guid : System.Guid.Empty;
         Name = name;
         FullyQualifiedName = fullyQualifiedName;
         Source = source;
-        CodeFilePath = source;
-        LineNumber = -1;
+        CodeFilePath = codeFilePath;
+        LineNumber = lineNumber;
     }
 
     public string Id { get; }
