@@ -22,7 +22,7 @@ Minimum target version:
 - dotnet core 1.1
 - dotnet framework 4.5
 - dotnet standard 1.3
-- Unity <todo replace with checked minimum version>
+- Unity 2019
 
  Tested against:
 
@@ -30,7 +30,6 @@ Minimum target version:
 - dotnet framework 4.8
 - Unity 6
 - Unity 2022
-- 
 
 ## Getting started
 

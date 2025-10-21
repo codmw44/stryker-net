@@ -55,6 +55,18 @@ To not run all tests for each Mutant we use two filtration stages
    
    Stryker run only test modes of test project. Which decrease overhead on empty run of playmode tests
 
+## Initialization process
+
+- Detect Unity Project
+- Add Stryker.UnitySDK package to Unity Project
+- Open Unity Project
+- Find generated .sln file
+- Analyze .csproj files
+- Run all tests
+- Mutates .dll files
+- Run mutants one by one
+- Report stats
+- Rollback all mutants
 
 ## Faced issues
 
@@ -92,12 +104,14 @@ Here are the main difficulty and trade off to consider
 - Here are option to use SymLink for Assets and Packages and just copy Library folder to speed up Unity opening time. But here might be issues with run parallel playmode tests because it creates a temp scenes at Assets/ folder
 - Investigate [com.unity.multiplayer.playmode](https://docs.unity3d.com/Packages/com.unity.multiplayer.playmode@2.0/manual/index.html) package to see if it can help us with it
 
-### Not support test filters
-TODO DESCRIBE
+### Not support test case filters
+Test case filters is not supported by Unity Test Runner the same way as it's for `dotnet test --filter`. Unity has less options and more traditional way to setup
+[Link to documentation](https://docs.unity3d.com/Packages/com.unity.test-framework@1.6/api/UnityEditor.TestTools.TestRunner.Api.Filter.html#methods)
 
 ### Lack of full test statistic
-TODO DESCRIBE
-
+As I understand, it is because of lack of data for tests at TestRunResult. I checked how much data VSTest submited here and was shocked because UnityTestRunner has provided very tiny amount of information about each test
+Here is the PR that added the original functionality: #1850
+But I still didn't able to make it life
 
 ## Documentation links
 - [Unity Test Runner](https://docs.unity3d.com/Packages/com.unity.test-framework@2.0/manual/index.html)
