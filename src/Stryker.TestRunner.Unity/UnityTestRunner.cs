@@ -28,7 +28,7 @@ public class UnityTestRunner(
     private Dictionary<string, IFrameworkTestDescription> _testDescriptions = new();
     private readonly UnityTestAssemblyAnalyzer _assemblyAnalyzer = new();
 
-    public bool DiscoverTests(IAnalyzerResult assembly, ITestProjectsInfo projectInfoTestProjectsInfo)
+    public bool DiscoverTests(IAnalyzerResult assembly)
     {
         if (_testSet == null)
         {
@@ -36,7 +36,6 @@ public class UnityTestRunner(
 
             _assemblyAnalyzer.AnalyzeProject(assembly);
 
-            var allTestSourceFilePaths = projectInfoTestProjectsInfo.AnalyzerResults.SelectMany(res => res.SourceFiles);
             _testSet = new TestSet();
             _testDescriptions = testResultsXml
                 .Descendants("test-case")
@@ -52,7 +51,7 @@ public class UnityTestRunner(
                         .FirstOrDefault(ancestor => ancestor.Attribute("type")?.Value == "Assembly")
                         ?.Attribute("fullname")?.Value ?? string.Empty;
 
-                    var codeFilePath = allTestSourceFilePaths.FirstOrDefault(path => File.ReadAllText(path).Contains(name));
+                    var codeFilePath = FindMatchesWithLineNumbers(strykerOptions.ProjectPath, name).FirstOrDefault();
                     var lineNumber = codeFilePath == null ? 1 : File.ReadAllLines(codeFilePath).TakeWhile(line => !line.Contains(name)).Count();
                     var testDescription = new TestDescription(id, name, fullname);
                     var testCase = new UnityTestCase(id, name, fullname, assemblyPath, codeFilePath, lineNumber);
@@ -72,7 +71,22 @@ public class UnityTestRunner(
         return _assemblyAnalyzer.TryGetTestAssemblyInfo(assembly.GetAssemblyName(), out var testAssemblyInfo)
                && testAssemblyInfo.SupportedModes.HasFlag(strykerOptions.UnityTestMode);
     }
+    private static IEnumerable<string> FindMatchesWithLineNumbers(
+        string rootPath, string searchText, string filePattern = "*.cs")
+    {
+        var files = Directory.EnumerateFiles(rootPath, filePattern, SearchOption.AllDirectories);
 
+        foreach (var file in files)
+        {
+            foreach (var line in File.ReadLines(file))
+            {
+                if (line.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                {
+                    yield return file;
+                }
+            }
+        }
+    }
     public ITestSet GetTests(IProjectAndTests project)
     {
         if (_testSet == null)

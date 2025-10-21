@@ -12,7 +12,7 @@ public interface ITestRunner : IDisposable
        ITestIdentifiers ranTests,
        ITestIdentifiers timedOutTests);
 
-    bool DiscoverTests(IAnalyzerResult assembly, ITestProjectsInfo projectInfoTestProjectsInfo);
+    bool DiscoverTests(IAnalyzerResult assembly);
 
     ITestSet GetTests(IProjectAndTests project);
 
