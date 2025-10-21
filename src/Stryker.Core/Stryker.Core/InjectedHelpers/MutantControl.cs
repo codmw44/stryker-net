@@ -15,9 +15,8 @@ namespace Stryker
         // this attribute will be set by the Stryker Data Collector before each test
         public static bool CaptureCoverage;
         public static int ActiveMutant = -2;
-        public static int Previous = -2;
         public const int ActiveMutantNotInitValue = -2;
-        private static string _pathToListenActiveMutation => Path.Combine(Environment.GetEnvironmentVariable("ActiveMutationPath"), typeof(MutantControl).Namespace + ".txt");
+        private static string _pathToListenActiveMutationForUnity => Path.Combine(Environment.GetEnvironmentVariable("STRYKER_ACTIVE_MUTANT_ID_PATH"), typeof(MutantControl).Namespace + ".txt");
 
         public static void InitCoverage()
         {
@@ -51,9 +50,32 @@ namespace Stryker
                 RegisterCoverage(id);
                 return false;
             }
-            if (File.Exists(_pathToListenActiveMutation))
+            if (ActiveMutant == ActiveMutantNotInitValue)
             {
-                ActiveMutant = int.Parse(File.ReadAllText(_pathToListenActiveMutation));
+#pragma warning disable CS8600
+                // get the environment variable storing the mutation id
+                string environmentVariableName = System.Environment.GetEnvironmentVariable("STRYKER_MUTANT_ID_CONTROL_VAR");
+                if (environmentVariableName != null)
+                {
+                    string environmentVariable = System.Environment.GetEnvironmentVariable(environmentVariableName);
+                    if (string.IsNullOrEmpty(environmentVariable))
+                    {
+                        ActiveMutant = -1;
+                    }
+                    else
+                    {
+                        ActiveMutant = int.Parse(environmentVariable);
+                    }
+                }
+                else
+                {
+                    ActiveMutant = -1;
+                }
+            }
+
+            if (File.Exists(_pathToListenActiveMutationForUnity))
+            {
+                ActiveMutant = int.Parse(File.ReadAllText(_pathToListenActiveMutationForUnity));
             }
 
             return id == ActiveMutant;

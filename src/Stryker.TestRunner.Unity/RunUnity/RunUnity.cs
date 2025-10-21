@@ -237,7 +237,7 @@ public class RunUnity(IProcessExecutor processExecutor, IUnityPath unityPath, IL
         _pathToUnityListenFile = Path.Combine(strykerOptions.OutputPath, "UnityListens.txt");
         Environment.SetEnvironmentVariable("Stryker.Unity.PathToListen", _pathToUnityListenFile);
         _pathToActiveMutantsListenFile = strykerOptions.OutputPath;
-        Environment.SetEnvironmentVariable("ActiveMutationPath", _pathToActiveMutantsListenFile);
+        Environment.SetEnvironmentVariable("STRYKER_ACTIVE_MUTANT_ID_PATH", _pathToActiveMutantsListenFile);
 
         CleanupCommandBuffer();
 
