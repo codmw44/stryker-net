@@ -156,35 +156,33 @@ public class UnityTestRunner(
 
         // Determine target test assemblies based on mutants and test mode
         IEnumerable<string> targetAssemblies = null;
-        var testModeFromFilteredAssemblies = strykerOptions.UnityTestMode;
+        var skipRun = false;
 
-        if (_assemblyAnalyzer != null)
+        var relevantTestAssemblies = _assemblyAnalyzer.GetFilteredTestAssemblies(mutants, strykerOptions.UnityTestMode);
+        targetAssemblies = relevantTestAssemblies.Select(ta => ta.AssemblyName).ToList();
+
+        var testModeFromFilteredAssemblies = UnityTestMode.None;
+        foreach (var unityTestAssemblyInfo in relevantTestAssemblies)
+            testModeFromFilteredAssemblies |= unityTestAssemblyInfo.SupportedModes;
+        if (testModeFromFilteredAssemblies.HasFlag(UnityTestMode.EditMode) && !strykerOptions.UnityTestMode.HasFlag(UnityTestMode.EditMode))
+            testModeFromFilteredAssemblies &= ~UnityTestMode.EditMode;
+        if (testModeFromFilteredAssemblies.HasFlag(UnityTestMode.PlayMode) && !strykerOptions.UnityTestMode.HasFlag(UnityTestMode.PlayMode))
+            testModeFromFilteredAssemblies &= ~UnityTestMode.PlayMode;
+
+        if (targetAssemblies.Any())
         {
-            var relevantTestAssemblies = _assemblyAnalyzer.GetFilteredTestAssemblies(mutants, strykerOptions.UnityTestMode);
-            targetAssemblies = relevantTestAssemblies.Select(ta => ta.AssemblyName).ToList();
-            testModeFromFilteredAssemblies = UnityTestMode.None;
-            foreach (var unityTestAssemblyInfo in relevantTestAssemblies)
-            {
-                testModeFromFilteredAssemblies |= unityTestAssemblyInfo.SupportedModes;
-            }
-            if (testModeFromFilteredAssemblies.HasFlag(UnityTestMode.EditMode) && !strykerOptions.UnityTestMode.HasFlag(UnityTestMode.EditMode))
-                testModeFromFilteredAssemblies &= ~UnityTestMode.EditMode;
-            if (testModeFromFilteredAssemblies.HasFlag(UnityTestMode.PlayMode) && !strykerOptions.UnityTestMode.HasFlag(UnityTestMode.PlayMode))
-                testModeFromFilteredAssemblies &= ~UnityTestMode.PlayMode;
-
-            if (targetAssemblies.Any())
-            {
-                logger.LogDebug("Running tests for assemblies: {0}", string.Join(", ", targetAssemblies));
-            }
-            else
-            {
-                testModeFromFilteredAssemblies = UnityTestMode.EditMode;
-                targetAssemblies = ["none"];
-                logger.LogDebug("No relevant test assemblies found for mutants, skip run");
-            }
+            logger.LogDebug("Running tests for assemblies: {0}", string.Join(", ", targetAssemblies));
+        }
+        else
+        {
+            skipRun = true;
+            logger.LogDebug("No relevant test assemblies found for mutants, skip run");
         }
 
-        var testResultsXml = RunTests(out var duration, mutants.Single().Id.ToString(), project.HelperNamespace, targetAssemblies, testModeFromFilteredAssemblies);
+        var duration = TimeSpan.Zero;
+        var testResultsXml = !skipRun
+            ? RunTests(out duration, mutants.Single().Id.ToString(), project.HelperNamespace, targetAssemblies, testModeFromFilteredAssemblies)
+            : new XDocument();
 
         var passedTests = GetPassedTests(testResultsXml);
         var failedTests = GetFailedTests(testResultsXml);
