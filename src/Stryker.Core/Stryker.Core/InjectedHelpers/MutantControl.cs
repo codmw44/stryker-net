@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-
 namespace Stryker
 {
     public static class MutantControl
@@ -16,7 +11,7 @@ namespace Stryker
         public static bool CaptureCoverage;
         public static int ActiveMutant = -2;
         public const int ActiveMutantNotInitValue = -2;
-        private static string _pathToListenActiveMutationForUnity => Path.Combine(Environment.GetEnvironmentVariable("STRYKER_ACTIVE_MUTANT_ID_PATH"), typeof(MutantControl).Namespace + ".txt");
+        private static string _pathToListenActiveMutationForUnity => System.IO.Path.Combine(System.Environment.GetEnvironmentVariable("STRYKER_ACTIVE_MUTANT_ID_PATH"), typeof(MutantControl).Namespace + ".txt");
 
         public static void InitCoverage()
         {
@@ -73,9 +68,9 @@ namespace Stryker
                 }
             }
 
-            if (File.Exists(_pathToListenActiveMutationForUnity))
+            if (System.IO.File.Exists(_pathToListenActiveMutationForUnity))
             {
-                ActiveMutant = int.Parse(File.ReadAllText(_pathToListenActiveMutationForUnity));
+                ActiveMutant = int.Parse(System.IO.File.ReadAllText(_pathToListenActiveMutationForUnity));
             }
 
             return id == ActiveMutant;
