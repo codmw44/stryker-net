@@ -26,6 +26,10 @@ public static class UnityStrykerOptionsExtension
 
     private static bool IsUnitProjectInternal(this string path)
     {
+        if (string.IsNullOrEmpty(path))
+            return false;
+        if (!File.Exists(path) && !Directory.Exists(path))
+            return false;
         var directories = Directory.GetDirectories(path);
         return directories.Contains(Path.Combine(path, "Assets")) && directories.Contains(Path.Combine(path, "Packages")) && directories.Contains(Path.Combine(path, "ProjectSettings"));
     }
@@ -38,6 +42,9 @@ public static class UnityStrykerOptionsExtension
     public static string GetUnityProjectDirectory(this string path)
     {
         if (string.IsNullOrEmpty(path))
+            return null;
+
+        if (!File.Exists(path) && !Directory.Exists(path))
             return null;
 
         var isDirectory = File.GetAttributes(path).HasFlag(FileAttributes.Directory);
