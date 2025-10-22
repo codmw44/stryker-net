@@ -218,7 +218,7 @@ public class StrykerOptions : IStrykerOptions
     /// <summary>
     /// The optimization mode for coverage analysis for the current run.
     /// </summary>
-    public OptimizationModes OptimizationMode { get; init; }
+    public OptimizationModes OptimizationMode { get; set; }
 
     /// <summary>
     /// This name is used in the dashboard report

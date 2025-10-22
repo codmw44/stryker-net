@@ -68,6 +68,7 @@ public class StrykerRunner : IStrykerRunner
             ITestRunner runner = null;
             if (options.IsUnityProject())
             {
+                options.OptimizationMode = OptimizationModes.None; //unity test runner doesn't support any coverage data yet
                 runner = new UnityTestRunner(options, loggerFactory.CreateLogger<UnityTestRunner>(), RunUnity.GetSingleInstance());
             }
 

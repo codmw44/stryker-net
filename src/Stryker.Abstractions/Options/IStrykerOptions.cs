@@ -30,7 +30,7 @@ public interface IStrykerOptions
     string MsBuildPath { get; init; }
     IEnumerable<IFilePattern> Mutate { get; init; }
     MutationLevel MutationLevel { get; init; }
-    OptimizationModes OptimizationMode { get; init; }
+    OptimizationModes OptimizationMode { get; set; }
     string OutputPath { get; init; }
     string ProjectName { get; set; }
     string ProjectPath { get; init; }
