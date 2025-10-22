@@ -1,4 +1,4 @@
-namespace Hypemasters.Pooling.Infrastructures
+namespace Package.Pooling.Infrastructures
 {
 	public interface IPrefabPoolCallbacks
 	{

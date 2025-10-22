@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.Reflection;
 using Cysharp.Threading.Tasks;
 using FluentAssertions;
-using Hypemasters.Pooling.Implementations;
-using Hypemasters.Pooling.Infrastructures;
-using Hypemasters.Pooling.Installers;
-using Hypemasters.Pooling.Strategies;
+using Package.Pooling.Implementations;
+using Package.Pooling.Infrastructures;
+using Package.Pooling.Installers;
+using Package.Pooling.Strategies;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -27,7 +27,7 @@ namespace Common.Pooling.Tests
 		protected override void InstallDependencies(IContainerBuilder containerBuilder)
 		{
 			containerBuilder.RegisterGameObjectPrefabsPool();
-			containerBuilder.RegisterDefaultPoolStrategy();		
+			containerBuilder.RegisterDefaultPoolStrategy();
 			containerBuilder.RegisterPool<Transform>();
 			containerBuilder.RegisterPool<EmptyMonoBehaviourForTest>();
 		}
@@ -431,7 +431,7 @@ namespace Common.Pooling.Tests
 				Object.Destroy(parent);
 				Object.Destroy(gm);
 			});
-			
+
 		}
 
 		private static object GetPrivateFieldFromPrefabPoolReference<T>(

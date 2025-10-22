@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Reflection;
 using Cysharp.Threading.Tasks;
 using FluentAssertions;
-using Hypemasters.Pooling.Implementations;
-using Hypemasters.Pooling.Infrastructures;
-using Hypemasters.Pooling.Installers;
-using Hypemasters.Pooling.Strategies;
+using Package.Pooling.Implementations;
+using Package.Pooling.Infrastructures;
+using Package.Pooling.Installers;
+using Package.Pooling.Strategies;
 using NUnit.Framework;
 using UnityEngine;
 using VContainer;
@@ -56,7 +56,7 @@ namespace Common.Pooling.Tests
 
 			item.Should().NotBeNull();
 			item.name.Should().Contain("Test1");
-			
+
 			var prefab2 = new GameObject("Test2");
 
 			var poolRef2 = pool.GetPoolReference(prefab2, 3);
@@ -64,7 +64,7 @@ namespace Common.Pooling.Tests
 
 			item2.Should().NotBeNull();
 			item2.name.Should().Contain("Test2");
-			
+
 			poolRef.Return(item);
 			poolRef2.Return(item2);
 			poolRef.Dispose();

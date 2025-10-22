@@ -1,7 +1,7 @@
-using Hypemasters.Pooling.Infrastructures;
+using Package.Pooling.Infrastructures;
 using UnityEngine;
 
-namespace Hypemasters.Pooling.Strategies
+namespace Package.Pooling.Strategies
 {
 	[AddComponentMenu("Advanced/Pool/Disable Canvas On Creation Strategy")]
 	[DisallowMultipleComponent]

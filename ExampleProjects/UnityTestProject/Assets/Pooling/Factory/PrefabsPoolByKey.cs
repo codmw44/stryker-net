@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Hypemasters.Pooling.Infrastructures;
+using Package.Pooling.Infrastructures;
 using UnityEngine;
 using Component = UnityEngine.Component;
 
-namespace Hypemasters.Pooling.Factory
+namespace Package.Pooling.Factory
 {
 	public class PrefabsPoolByKey : IPrefabsPool<GameObject>
 	{

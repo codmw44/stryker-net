@@ -1,7 +1,7 @@
-using Hypemasters.Pooling.Infrastructures;
+using Package.Pooling.Infrastructures;
 using UnityEngine;
 
-namespace Hypemasters.Pooling.Strategies
+namespace Package.Pooling.Strategies
 {
 	public abstract class DefaultPoolStrategyBase : IPoolStrategy
 	{
@@ -12,7 +12,7 @@ namespace Hypemasters.Pooling.Strategies
 			{
 				gameObject.SetActive(true);
 			}
-			
+
 			return gameObject;
 		}
 

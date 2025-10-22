@@ -1,7 +1,11 @@
 {
-    "name": "Hypemasters.TimeService.Extensions",
+    "name": "Package.Pooling",
     "references": [
-        "Hypemasters.TimeService.Infrastructure"
+        "UniTask",
+        "UniTask.Linq",
+        "VContainer",
+        "Package.Logger.Abstraction",
+        "ZLogger"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -11,5 +15,6 @@
     "autoReferenced": false,
     "defineConstraints": [],
     "versionDefines": [],
-    "noEngineReferences": false
+    "noEngineReferences": false,
+    "rootNamespace": "Package.Pooling"
 }

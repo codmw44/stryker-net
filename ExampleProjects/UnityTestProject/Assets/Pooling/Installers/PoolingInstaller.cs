@@ -1,11 +1,11 @@
-using Hypemasters.Pooling.Factory;
-using Hypemasters.Pooling.Implementations;
-using Hypemasters.Pooling.Infrastructures;
-using Hypemasters.Pooling.Strategies;
+using Package.Pooling.Factory;
+using Package.Pooling.Implementations;
+using Package.Pooling.Infrastructures;
+using Package.Pooling.Strategies;
 using UnityEngine;
 using VContainer;
 
-namespace Hypemasters.Pooling.Installers
+namespace Package.Pooling.Installers
 {
 	public static class PoolingInstaller
 	{

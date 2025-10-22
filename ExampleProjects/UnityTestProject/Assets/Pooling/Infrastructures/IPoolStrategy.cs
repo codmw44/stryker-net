@@ -1,5 +1,5 @@
 
-namespace Hypemasters.Pooling.Infrastructures
+namespace Package.Pooling.Infrastructures
 {
 	public interface IPoolStrategy : ICreatePoolStrategy, IGetPoolStrategy, IReturnPoolStrategy
 	{

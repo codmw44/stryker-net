@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Hypemasters.Pooling.Infrastructures
+namespace Package.Pooling.Infrastructures
 {
 	public interface IPoolReference<T> : IDisposable
 	{

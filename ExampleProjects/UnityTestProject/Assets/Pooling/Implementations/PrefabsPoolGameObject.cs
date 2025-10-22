@@ -1,21 +1,17 @@
-using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using Hypemasters.Pooling.Infrastructures;
-using Microsoft.Extensions.Logging;
+using Package.Pooling.Infrastructures;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace Hypemasters.Pooling.Implementations
+namespace Package.Pooling.Implementations
 {
-	public sealed partial class PrefabsPoolGameObject : IPrefabsPool<GameObject> 
-	{ 
+	public sealed partial class PrefabsPoolGameObject : IPrefabsPool<GameObject>
+	{
 		public const int MaxSize = 300_000;
 
 		private readonly ICreatePoolStrategy _defaultCreatePoolStrategy;
 		private readonly IGetPoolStrategy _defaultGetPoolStrategy;
 		private readonly IReturnPoolStrategy _defaultReturnPoolStrategy;
-		private readonly ILogger _logger;
 
 		private readonly Queue<GameObject> _queue = new Queue<GameObject>();
 
@@ -103,7 +99,7 @@ namespace Hypemasters.Pooling.Implementations
 			foreach (var prefabPoolCallbackse in instance.GetComponents<IPrefabPoolCallbacks>())
 			{
 				prefabPoolCallbackse.BeforeSpawn();
-			}			
+			}
 			_getPoolStrategy.ProcessBeforeGet(instance.gameObject, parent);
 			return instance;
 		}

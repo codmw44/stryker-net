@@ -1,6 +1,6 @@
 using System;
-using Hypemasters.Pooling.Infrastructures;
-using Hypemasters.Pooling.Installers;
+using Package.Pooling.Infrastructures;
+using Package.Pooling.Installers;
 using NUnit.Framework;
 using FluentAssertions;
 using UnityEngine;

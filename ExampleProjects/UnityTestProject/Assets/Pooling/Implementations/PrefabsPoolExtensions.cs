@@ -1,7 +1,7 @@
-using Hypemasters.Pooling.Infrastructures;
+using Package.Pooling.Infrastructures;
 using UnityEngine;
 
-namespace Hypemasters.Pooling.Implementations
+namespace Package.Pooling.Implementations
 {
 	public static class PrefabsPoolExtensions
 	{

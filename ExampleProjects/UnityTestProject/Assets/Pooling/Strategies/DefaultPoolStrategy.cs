@@ -1,7 +1,6 @@
-using Microsoft.Extensions.Logging;
 using UnityEngine;
 
-namespace Hypemasters.Pooling.Strategies
+namespace Package.Pooling.Strategies
 {
 	public sealed class DefaultPoolStrategy : DefaultPoolStrategyBase
 	{

@@ -1,11 +1,11 @@
 {
-  "name": "Hypemasters.Pooling.Tests",
+  "name": "Package.Pooling.Tests",
   "references": [
     "UnityEngine.TestRunner",
     "UnityEditor.TestRunner",
     "Unity.Rider.Editor",
-    "Hypemasters.Pooling",
-    "Hypemasters.Logger.Abstraction",
+    "Package.Pooling",
+    "Package.Logger.Abstraction",
     "UniTask",
     "VContainer"
   ],

@@ -33,6 +33,8 @@ namespace Common.ExtensionPoints.Implementation
 
 		private bool IsActiveSafeCall(TContext context, TPoint point)
 		{
+            Debug.Log("Do nothing");
+
 			try
 			{
 				return point.IsActive(context);

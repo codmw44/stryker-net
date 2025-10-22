@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using Hypemasters.Pooling.Infrastructures;
+using Package.Pooling.Infrastructures;
 using UnityEngine;
 
-namespace Hypemasters.Pooling.Implementations
+namespace Package.Pooling.Implementations
 {
 	[SuppressMessage("ControllersTree", "RA4:You should use ZLogger")]
 	public sealed partial class PrefabsPoolGameObject
@@ -57,12 +57,12 @@ namespace Hypemasters.Pooling.Implementations
 
 				_prefabPoolGameObject.Return(pooledObject);
 			}
-			
+
 			public void Dispose()
 			{
 				if(_isDisposed)
 					return;
-				
+
 				foreach (var pooledObject in _poolInstantiatedObjects)
 				{
 					if (pooledObject == null)
