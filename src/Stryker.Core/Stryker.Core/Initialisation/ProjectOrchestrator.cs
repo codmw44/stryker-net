@@ -76,10 +76,12 @@ public sealed class ProjectOrchestrator : IProjectOrchestrator
         var inputs = _initializationProcess.GetMutationTestInputs(options, projectInfos, _runner);
 
         var mutationTestProcesses = new ConcurrentBag<IMutationTestProcess>();
-        Parallel.ForEach(inputs, mutationTestInput =>
-        {
-            mutationTestProcesses.Add(_projectMutator.MutateProject(options, mutationTestInput, reporters));
-        });
+
+        Parallel.ForEach(inputs, new ParallelOptions { MaxDegreeOfParallelism = options.IsUnityProject() ? 1 : -1 },
+            mutationTestInput =>
+            {
+                mutationTestProcesses.Add(_projectMutator.MutateProject(options, mutationTestInput, reporters));
+            });
         return mutationTestProcesses;
     }
 
