@@ -31,14 +31,6 @@ public class UnityTestAssemblyAnalyzer
         _asmdefParser = new AsmdefParser(fileSystem);
     }
 
-    public void AnalyzeSolution(IProjectAndTests project)
-    {
-        foreach (var analyzerResult in project.TestProjectsInfo.AnalyzerResults)
-        {
-            AnalyzeProject(analyzerResult);
-        }
-    }
-
     public void AnalyzeProject(IAnalyzerResult analyzerResult)
     {
         if (!IsUnityTestProject(analyzerResult))
