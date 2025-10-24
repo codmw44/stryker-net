@@ -1,3 +1,4 @@
+using System;
 using System.IO.Abstractions;
 using System.Text.Json;
 using Stryker.Abstractions.Options;
@@ -72,9 +73,16 @@ public class AsmdefParser(IFileSystem fileSystem)
         //we should use name from asmdef instead of file name because file name can missmatch with assembly name
 
         var json = _fileSystem.File.ReadAllText(asmdefPath);
-        using var document = JsonDocument.Parse(json);
-        var root = document.RootElement;
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
 
-        return root.TryGetProperty("name", out var name) ? name.GetString() : null;
+            return root.TryGetProperty("name", out var name) ? name.GetString() : null;
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
     }
 }

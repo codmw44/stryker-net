@@ -27,14 +27,14 @@ public class UnityAssemblyMapper
         }
 
         var filePath = mutant.Mutation.OriginalNode.SyntaxTree.FilePath;
-        var normalizedPath = Path.GetFullPath(filePath);
+        var normalizedPath = _fileSystem.Path.GetFullPath(filePath);
 
         if (_fileToAssemblyCache.TryGetValue(normalizedPath, out var cachedAssembly))
         {
             return cachedAssembly;
         }
 
-        var directory = Path.GetDirectoryName(normalizedPath);
+        var directory = _fileSystem.Path.GetDirectoryName(normalizedPath);
         while (!string.IsNullOrEmpty(directory))
         {
             var asmDefFiles = _fileSystem.Directory.GetFiles(directory, "*.asmdef", SearchOption.TopDirectoryOnly);

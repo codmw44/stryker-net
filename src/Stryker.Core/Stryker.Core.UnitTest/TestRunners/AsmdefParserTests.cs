@@ -75,7 +75,9 @@ public class AsmdefParserTests : TestBase
         var asmdefContent = "invalid json";
         _fileSystem.AddFile(asmdefPath, asmdefContent);
 
-        Should.Throw<System.Text.Json.JsonException>(() => _asmdefParser.GetAssemblyName(asmdefPath));
+        var result = _asmdefParser.GetAssemblyName(asmdefPath);
+
+        result.ShouldBeNull();
     }
 
     [TestMethod]
