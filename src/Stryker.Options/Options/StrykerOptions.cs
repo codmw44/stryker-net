@@ -59,7 +59,7 @@ public class StrykerOptions : IStrykerOptions
     /// <summary>
     /// The full path of the solution file. Can be null.
     /// </summary>
-    public string SolutionPath { get; init; }
+    public string SolutionPath { get; set; }
 
     /// <summary>
     /// The configuration (in the VS sense) that should be used when building the project under test.
@@ -70,6 +70,18 @@ public class StrykerOptions : IStrykerOptions
     /// The detected target framework for the current project under test.
     /// </summary>
     public string TargetFramework { get; init; }
+
+    public string PathToUnity { get; init; }
+
+    /// <summary>
+    /// Maximum memory consumption limit in MB for Unity process before restart
+    /// </summary>
+    public int UnityMemoryConsumptionLimitInMb { get; init; }
+
+    /// <summary>
+    /// Unity test mode to run: All (runs both EditMode and PlayMode in sequence), PlayMode, or EditMode
+    /// </summary>
+    public UnityTestMode UnityTestMode { get; init; }
 
     /// <summary>
     /// The options passed to all logging systems
@@ -206,7 +218,7 @@ public class StrykerOptions : IStrykerOptions
     /// <summary>
     /// The optimization mode for coverage analysis for the current run.
     /// </summary>
-    public OptimizationModes OptimizationMode { get; init; }
+    public OptimizationModes OptimizationMode { get; set; }
 
     /// <summary>
     /// This name is used in the dashboard report

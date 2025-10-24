@@ -30,7 +30,7 @@ public interface IStrykerOptions
     string MsBuildPath { get; init; }
     IEnumerable<IFilePattern> Mutate { get; init; }
     MutationLevel MutationLevel { get; init; }
-    OptimizationModes OptimizationMode { get; init; }
+    OptimizationModes OptimizationMode { get; set; }
     string OutputPath { get; init; }
     string ProjectName { get; set; }
     string ProjectPath { get; init; }
@@ -41,8 +41,11 @@ public interface IStrykerOptions
     ReportType? ReportTypeToOpen { get; init; }
     bool Since { get; init; }
     string SinceTarget { get; init; }
-    string SolutionPath { get; init; }
+    string SolutionPath { get; set; }
     string SourceProjectName { get; init; }
+    string PathToUnity { get; init; }
+    int UnityMemoryConsumptionLimitInMb { get; init; }
+    UnityTestMode UnityTestMode { get; init; }
     string TargetFramework { get; init; }
     string TestCaseFilter { get; init; }
     IEnumerable<string> TestProjects { get; init; }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Abstractions;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -9,10 +10,12 @@ using Mono.Cecil;
 using Stryker.Abstractions.Baseline;
 using Stryker.Abstractions.Exceptions;
 using Stryker.Abstractions.Options;
+using Stryker.Abstractions.Options.Inputs;
 using Stryker.Abstractions.Reporting;
 using Stryker.Abstractions.Testing;
 using Stryker.Core.MutationTest;
 using Stryker.Core.ProjectComponents.SourceProjects;
+using Stryker.TestRunner.Unity.RunUnity;
 using Stryker.TestRunner.VsTest;
 using Stryker.Utilities.Logging;
 
@@ -31,24 +34,32 @@ public sealed class ProjectOrchestrator : IProjectOrchestrator
     private readonly IInitialBuildProcess _initialBuildProcess;
     private readonly IInputFileResolver _fileResolver;
     private ITestRunner _runner;
+    private readonly IFileSystem _fileSystem;
 
     public ProjectOrchestrator(IProjectMutator projectMutator = null,
         IInitialBuildProcess initialBuildProcess = null,
         IInputFileResolver fileResolver = null,
-        IInitialisationProcess initializationProcess = null)
+        IInitialisationProcess initializationProcess = null, IFileSystem fileSystem = null)
     {
         _projectMutator = projectMutator ?? new ProjectMutator();
         _initialBuildProcess = initialBuildProcess ?? new InitialBuildProcess();
         _logger = ApplicationLogging.LoggerFactory.CreateLogger<ProjectOrchestrator>();
         _fileResolver = fileResolver ?? new InputFileResolver();
+        _fileSystem = fileSystem ?? new FileSystem();
         _initializationProcess = initializationProcess;
     }
 
     public IEnumerable<IMutationTestProcess> MutateProjects(IStrykerOptions options, IReporter reporters,
         ITestRunner runner = null)
     {
-
         _initializationProcess ??= new InitialisationProcess(_fileResolver, _initialBuildProcess);
+        if (options.IsUnityProject(_fileSystem))
+        {
+            _logger.LogInformation("Found Unity project. Run Unity project to generate sln and csproj files.");
+            //updating solution path required because Unity projects on the first launch has no .csproj or .sln. These files are under .gitignore and generates after Unity launch
+            RunUnity.GetSingleInstance().ReloadDomain(options, options.ProjectPath);
+            options.SolutionPath = new SolutionInput().Validate(options.ProjectPath, new FileSystem());
+        }
         var projectInfos = _initializationProcess.GetMutableProjectsInfo(options);
 
         if (!projectInfos.Any())
@@ -57,7 +68,8 @@ public sealed class ProjectOrchestrator : IProjectOrchestrator
             return [];
         }
 
-        _initializationProcess.BuildProjects(options, projectInfos);
+        if (!options.IsUnityProject(_fileSystem)) //unity projects cannot be built out of Unity
+            _initializationProcess.BuildProjects(options, projectInfos);
 
         // create a test runner
         _runner = runner ?? new VsTestRunnerPool(options, fileSystem: _fileResolver.FileSystem);
@@ -66,10 +78,12 @@ public sealed class ProjectOrchestrator : IProjectOrchestrator
         var inputs = _initializationProcess.GetMutationTestInputs(options, projectInfos, _runner);
 
         var mutationTestProcesses = new ConcurrentBag<IMutationTestProcess>();
-        Parallel.ForEach(inputs, mutationTestInput =>
-        {
-            mutationTestProcesses.Add(_projectMutator.MutateProject(options, mutationTestInput, reporters));
-        });
+
+        Parallel.ForEach(inputs, new ParallelOptions { MaxDegreeOfParallelism = options.IsUnityProject(_fileSystem) ? 1 : -1 },
+            mutationTestInput =>
+            {
+                mutationTestProcesses.Add(_projectMutator.MutateProject(options, mutationTestInput, reporters));
+            });
         return mutationTestProcesses;
     }
 

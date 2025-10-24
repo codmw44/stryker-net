@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Stryker.Abstractions.Exceptions;
 using Stryker.Configuration;
 using Stryker.Core.Helpers;
-using Stryker.Core.Helpers.ProcessUtil;
+using Stryker.Utilities.ProcessUtil;
 using Stryker.Utilities.Logging;
 
 namespace Stryker.Core.Initialisation;

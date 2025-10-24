@@ -1,0 +1,31 @@
+using System.IO.Abstractions;
+using Stryker.Abstractions.Exceptions;
+using Stryker.Abstractions.Options;
+
+namespace Stryker.Core.Options.Inputs;
+
+public class PathToUnityInput : Input<string>
+{
+    public override string Default => null;
+
+    protected override string Description => "Override path to Unity instance for running tests";
+
+    public string Validate(IFileSystem fileSystem)
+    {
+        if (SuppliedInput is not null)
+        {
+            if (string.IsNullOrWhiteSpace(SuppliedInput))
+            {
+                throw new InputException("Path to unity cannot be empty");
+            }
+
+            if (!fileSystem.File.Exists(SuppliedInput))
+            {
+                throw new InputException($"File on this path doesn't exist '{SuppliedInput}'");
+            }
+            return SuppliedInput;
+        }
+
+        return Default;
+    }
+}

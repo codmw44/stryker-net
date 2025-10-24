@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Buildalyzer" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="TestableIO.System.IO.Abstractions.Wrappers" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Stryker.Abstractions\Stryker.Abstractions.csproj" />
+    <ProjectReference Include="..\Stryker.TestRunner\Stryker.TestRunner.csproj" />
+    <ProjectReference Include="..\Stryker.TestRunner.VsTest\Stryker.TestRunner.VsTest.csproj" />
+    <ProjectReference Include="..\Stryker.Utilities\Stryker.Utilities.csproj" />
+  </ItemGroup>
+
+</Project>

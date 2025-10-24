@@ -1,6 +1,7 @@
 using System.IO.Abstractions;
 using Stryker.Abstractions.Options.Inputs;
 using Stryker.Configuration;
+using Stryker.Core.Options.Inputs;
 
 namespace Stryker.Abstractions.Options;
 
@@ -39,6 +40,9 @@ public interface IStrykerInputs
     SinceTargetInput SinceTargetInput { get; init; }
     SolutionInput SolutionInput { get; init; }
     TargetFrameworkInput TargetFrameworkInput { get; init; }
+    PathToUnityInput PathToUnityInput { get; init; }
+    UnityMemoryConsumptionLimitInMbInput UnityMemoryConsumptionLimitInMbInput { get; init; }
+    UnityTestModeInput UnityTestModeInput { get; init; }
     TestProjectsInput TestProjectsInput { get; init; }
     TestCaseFilterInput TestCaseFilterInput { get; init; }
     ThresholdBreakInput ThresholdBreakInput { get; init; }
@@ -104,6 +108,9 @@ public class StrykerInputs : IStrykerInputs
     public DisableMixMutantsInput DisableMixMutantsInput { get; set; } = new();
     public MsBuildPathInput MsBuildPathInput { get; init; } = new();
     public OpenReportInput OpenReportInput { get; init; } = new();
+    public PathToUnityInput PathToUnityInput { get; init; } = new();
+    public UnityMemoryConsumptionLimitInMbInput UnityMemoryConsumptionLimitInMbInput { get; init; } = new();
+    public UnityTestModeInput UnityTestModeInput { get; init; } = new();
     public OpenReportEnabledInput OpenReportEnabledInput { get; init; } = new();
     public BreakOnInitialTestFailureInput BreakOnInitialTestFailureInput { get; init; } = new();
 
@@ -111,6 +118,9 @@ public class StrykerInputs : IStrykerInputs
     {
         var basePath = BasePathInput.Validate(_fileSystem);
         var outputPath = OutputPathInput.Validate(_fileSystem);
+        var pathToUnity = PathToUnityInput.Validate(_fileSystem);
+        var unityMemoryConsumptionLimitInMb = UnityMemoryConsumptionLimitInMbInput.Validate();
+        var unityTestMode = UnityTestModeInput.Validate();
         var reportFileNameInput = ReportFileNameInput.Validate();
         var withBaseline = WithBaselineInput.Validate();
         var reporters = ReportersInput.Validate(withBaseline);
@@ -123,8 +133,11 @@ public class StrykerInputs : IStrykerInputs
         {
             ProjectPath = basePath,
             OutputPath = outputPath,
+            PathToUnity = pathToUnity,
+            UnityMemoryConsumptionLimitInMb = unityMemoryConsumptionLimitInMb,
+            UnityTestMode = unityTestMode,
             ReportFileName = reportFileNameInput,
-            Concurrency = ConcurrencyInput.Validate(),
+            Concurrency = ConcurrencyInput.Validate(basePath, _fileSystem),
             MutationLevel = MutationLevelInput.Validate(),
             DevMode = DevModeInput.Validate(),
             MsBuildPath = MsBuildPathInput.Validate(_fileSystem),

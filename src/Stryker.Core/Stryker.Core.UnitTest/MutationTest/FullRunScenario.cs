@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Buildalyzer;
 using Moq;
 using Stryker.Abstractions;
 using Stryker.Abstractions.Options;
@@ -170,7 +171,7 @@ internal class FullRunScenario
             string.Empty,
             Enumerable.Empty<string>(),
             TimeSpan.Zero);
-        runnerMock.Setup(x => x.DiscoverTests(It.IsAny<string>())).Returns(true);
+        runnerMock.Setup(x => x.DiscoverTests(It.IsAny<IAnalyzerResult>())).Returns(true);
         runnerMock.Setup(x => x.GetTests(It.IsAny<IProjectAndTests>())).Returns(TestSet);
         runnerMock.Setup(x => x.InitialTest(It.IsAny<IProjectAndTests>())).Returns(GetRunResult(InitialRunId));
         runnerMock.Setup(x => x.CaptureCoverage(It.IsAny<IProjectAndTests>()))

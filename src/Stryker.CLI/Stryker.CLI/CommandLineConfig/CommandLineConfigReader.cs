@@ -192,13 +192,18 @@ public class CommandLineConfigReader
         AddCliInput(inputs.TestProjectsInput, "test-project", "tp", CommandOptionType.MultipleValue, InputCategory.Build);
         AddCliInput(inputs.MsBuildPathInput, "msbuild-path", null, category: InputCategory.Build);
         AddCliInput(inputs.TargetFrameworkInput, "target-framework", null, optionType: CommandOptionType.SingleValue, category: InputCategory.Build);
+        AddCliInput(inputs.PathToUnityInput, "path-to-unity", null,  argumentHint: "unity-path", category: InputCategory.Build);
+        AddCliInput(inputs.UnityMemoryConsumptionLimitInMbInput, "unity-memory-limit", null, argumentHint: "megabytes", category: InputCategory.Build);
+        AddCliInput(inputs.UnityTestModeInput, "unity-test-mode", null, argumentHint: "All,PlayMode,EditMode", category: InputCategory.Build);
+
         // Category: Mutation
         AddCliInput(inputs.MutateInput, "mutate", "m", optionType: CommandOptionType.MultipleValue, argumentHint: "glob-pattern", category: InputCategory.Mutation);
         AddCliInput(inputs.MutationLevelInput, "mutation-level", "l", category: InputCategory.Mutation);
         AddCliInput(inputs.SinceInput, "since", "", optionType: CommandOptionType.SingleOrNoValue, argumentHint: "committish", category: InputCategory.Mutation);
         AddCliInput(inputs.WithBaselineInput, "with-baseline", "", optionType: CommandOptionType.SingleOrNoValue, argumentHint: "committish", category: InputCategory.Mutation);
         // Category: Reporting
-        AddCliInput(inputs.OpenReportInput, "open-report", "o", CommandOptionType.SingleOrNoValue, argumentHint: "report-type", category: InputCategory.Reporting);
+        AddCliInput(inputs.OpenReportInput, "open-report", "o", CommandOptionType.SingleOrNoValue, argumentHint: "report-type",
+            category: InputCategory.Reporting);
         AddCliInput(inputs.ReportersInput, "reporter", "r", optionType: CommandOptionType.MultipleValue, category: InputCategory.Reporting);
         AddCliInput(inputs.ProjectVersionInput, "version", "v", category: InputCategory.Reporting);
         AddCliInput(inputs.DashboardApiKeyInput, "dashboard-api-key", null, category: InputCategory.Reporting);
@@ -207,7 +212,7 @@ public class CommandLineConfigReader
         // Category: Misc
         AddCliInput(inputs.BreakOnInitialTestFailureInput, "break-on-initial-test-failure", null, optionType: CommandOptionType.NoValue, category: InputCategory.Misc);
         AddCliInput(inputs.DevModeInput, "dev-mode", null, optionType: CommandOptionType.NoValue, category: InputCategory.Misc);
-    }
+        }
 
     private void RegisterCliInput(CommandLineApplication app, CliInput option)
     {

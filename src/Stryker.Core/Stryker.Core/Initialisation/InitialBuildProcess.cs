@@ -1,10 +1,9 @@
-using System.IO;
 using System.IO.Abstractions;
 using Microsoft.Extensions.Logging;
 using Stryker.Abstractions.Exceptions;
 using Stryker.Configuration;
 using Stryker.Core.Helpers;
-using Stryker.Core.Helpers.ProcessUtil;
+using Stryker.Utilities.ProcessUtil;
 using Stryker.Utilities.Logging;
 
 namespace Stryker.Core.Initialisation;
@@ -27,7 +26,7 @@ public class InitialBuildProcess : IInitialBuildProcess
         _fileSystem = fileSystem ?? new FileSystem();
         _logger = ApplicationLogging.LoggerFactory.CreateLogger<InitialBuildProcess>();
     }
-    
+
     public void InitialBuild(bool fullFramework, string projectPath, string solutionPath, string configuration = null, string targetFramework = null,
         string msbuildPath = null)
     {

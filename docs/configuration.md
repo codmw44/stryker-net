@@ -206,6 +206,32 @@ The version of the report. This should be filled with the branch name, git tag o
 
 See [Stryker dashboard](./reporters.md#dashboard-reporter)
 
+### `path-to-unity` &lt;`string`&gt;
+Default: using default Unity installation path https://docs.unity3d.com/Manual/EditorCommandLineArguments.html
+Command line: `--path-to-unity /Applications/Unity/Hub/Editor/6000.0.44f1/Unity.app/Contents/MacOS/Unity`  
+Config file: `"path-to-unity": "/Applications/Unity/Hub/Editor/6000.0.44f1/Unity.app/Contents/MacOS/Unity"
+
+Allows you to specify the custom path to Unity executable. In case of using other Unity versions or custom installation path
+
+### `unity-memory-limit` &lt;`number`&gt;
+Default: 4000 megabytes
+Command line: `--unity-memory-limit 4000`  
+Config file: `"unity-memory-limit": 4000`
+
+This memory usage threshold is used to determine when Unity should be killed in case of overuse memory due to infinite loop during test run because of some mutants can lead to infinite loop. And it's the only way to catch this behaviour. Increase this limit if you have false failures at your project
+
+### `unity-test-mode` &lt;`string`&gt;
+Default: `All`
+Command line: `--unity-test-mode EditMode`  
+Config file: `"unity-test-mode": EditMode`
+
+This option allows you to run Unity only in certain Test Mode. Useful when you want to skip play mode tests because they are too heavy to validate
+
+Valid options:
+- All
+- EditMode
+- PlayMode
+
 ## Control flow
 
 ### `mutation-level` &lt;`level`&gt;

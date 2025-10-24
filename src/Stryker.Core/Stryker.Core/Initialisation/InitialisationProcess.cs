@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Abstractions;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using Mono.Cecil;
 using Stryker.Abstractions.Exceptions;
 using Stryker.Abstractions.Options;
 using Stryker.Abstractions.Testing;
@@ -173,7 +175,7 @@ public class InitialisationProcess : IInitialisationProcess
     {
         foreach (var testProject in projectInfo.TestProjectsInfo.AnalyzerResults)
         {
-            if (testRunner.DiscoverTests(testProject.GetAssemblyPath()))
+            if (testRunner.DiscoverTests(testProject))
             {
                 continue;
             }

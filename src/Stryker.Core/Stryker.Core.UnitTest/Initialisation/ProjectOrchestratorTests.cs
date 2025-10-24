@@ -196,7 +196,7 @@ public class ProjectOrchestratorTests : BuildAnalyzerTestsBase
             });
 
             var mockRunner = new Mock<ITestRunner>();
-            mockRunner.Setup(r => r.DiscoverTests(It.IsAny<string>())).Returns(true);
+            mockRunner.Setup(r => r.DiscoverTests(It.IsAny<IAnalyzerResult>())).Returns(true);
             mockRunner.Setup(r => r.GetTests(It.IsAny<IProjectAndTests>())).Returns(new TestSet());
             mockRunner.Setup(r => r.InitialTest(It.IsAny<IProjectAndTests>())).Returns(new TestRunResult(true));
             var nugetRestoreMock = new Mock<INugetRestoreProcess>();
@@ -442,7 +442,7 @@ public class ProjectOrchestratorTests : BuildAnalyzerTestsBase
         buildalyzerAnalyzerManagerMock = BuildBuildAnalyzerMock(analyzerResults);
 
         mockRunner = new Mock<ITestRunner>();
-        mockRunner.Setup(r => r.DiscoverTests(It.IsAny<string>())).Returns(true);
+        mockRunner.Setup(r => r.DiscoverTests(It.IsAny<IAnalyzerResult>())).Returns(true);
         mockRunner.Setup(r => r.GetTests(It.IsAny<IProjectAndTests>())).Returns(new TestSet());
         mockRunner.Setup(r => r.InitialTest(It.IsAny<IProjectAndTests>())).Returns(new TestRunResult(true));
 

@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Buildalyzer;
 using Microsoft.CodeAnalysis;
@@ -190,8 +191,84 @@ Generated source code may be missing.", analyzer);
         var hasTestProjectTypeGuid = analyzerResult
             .GetPropertyOrDefault("ProjectTypeGuids", "")
             .Contains("{3AC096D0-A1C2-E12C-1390-A8335801FDAB}");
+        var hasUnityTests = analyzerResult.IsUnityTestProject();
 
-        return isTestProject || hasTestProjectTypeGuid;
+        return isTestProject || hasTestProjectTypeGuid || hasUnityTests;
+    }
+
+    public static bool IsUnityTestProject(this IAnalyzerResult analyzerResult)
+    {
+        try
+        {
+            // Look for .asmdef files referenced in the project
+            // These appear as <None Include="**/*.asmdef" /> entries in csproj files
+            var items = analyzerResult.Items;
+            if (items.TryGetValue("None", out var noneItems))
+            {
+                var asmdefFiles = noneItems
+                    .Where(item => item.ItemSpec.EndsWith(".asmdef", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (asmdefFiles.Any())
+                {
+                    var projectDir = Path.GetDirectoryName(analyzerResult.ProjectFilePath);
+
+                    foreach (var asmdefItem in asmdefFiles)
+                    {
+                        var asmdefPath = Path.IsPathRooted(asmdefItem.ItemSpec)
+                            ? asmdefItem.ItemSpec
+                            : Path.Combine(projectDir ?? "", asmdefItem.ItemSpec);
+
+                        // Check if this .asmdef file references Unity test runners
+                        if (IsTestAssemblyFromAsmdef(asmdefPath))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // If there's any error parsing, fall back to false
+        }
+
+        return false;
+    }
+
+    private static bool IsTestAssemblyFromAsmdef(string asmdefPath)
+    {
+        if (!File.Exists(asmdefPath))
+        {
+            return false;
+        }
+
+        try
+        {
+            var json = File.ReadAllText(asmdefPath);
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
+
+            if (root.TryGetProperty("references", out var references) &&
+                references.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var reference in references.EnumerateArray())
+                {
+                    var refName = reference.GetString();
+                    if (refName != null && (refName.Contains("UnityEngine.TestRunner") ||
+                                          refName.Contains("UnityEditor.TestRunner")))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public static OutputKind GetOutputKind(this IAnalyzerResult analyzerResult) =>

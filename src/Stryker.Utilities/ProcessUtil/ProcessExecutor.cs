@@ -4,12 +4,11 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
-using Stryker.Utilities;
 
-namespace Stryker.Core.Helpers.ProcessUtil;
+namespace Stryker.Utilities.ProcessUtil;
 
 /// <summary>
-/// Used for mocking System.Process 
+/// Used for mocking System.Process
 /// </summary>
 public interface IProcessExecutor
 {
@@ -24,6 +23,16 @@ public interface IProcessExecutor
     /// <returns>ProcessResult</returns>
     ProcessResult Start(string path, string application, string arguments, IEnumerable<KeyValuePair<string, string>> environmentVariables = null, int timeoutMs = 0);
 
+    /// <summary>
+    /// Starts an process and returns the result when done and raw process. Takes an environment variable for active mutation
+    /// </summary>
+    /// <param name="path">The path the process will use as base path</param>
+    /// <param name="application">example: dotnet</param>
+    /// <param name="arguments">example: --no-build</param>
+    /// <param name="environmentVariables">Environment variables (and their values)</param>
+    /// <param name="timeoutMs">time allotted to the process for execution (0 or-1 for no limit)</param>
+    /// <returns>ProcessResult</returns>
+    ProcessResult Start(string path, string application, string arguments, ref Process rawProcess, IEnumerable<KeyValuePair<string, string>> environmentVariables = null, int timeoutMs = 0);
 }
 
 [ExcludeFromCodeCoverage]
@@ -39,6 +48,12 @@ public class ProcessExecutor(bool redirectOutput = true) : IProcessExecutor
         IEnumerable<KeyValuePair<string, string>> environmentVariables = null,
         int timeoutMs = 0)
     {
+        Process rawProcess = null;
+        return Start(path, application, arguments, ref rawProcess, environmentVariables, timeoutMs);
+    }
+
+    public ProcessResult Start(string path, string application, string arguments, ref Process rawProcess, IEnumerable<KeyValuePair<string, string>> environmentVariables = null, int timeoutMs = 0)
+    {
         var info = new ProcessStartInfo(application, arguments)
         {
             UseShellExecute = false,
@@ -52,20 +67,23 @@ public class ProcessExecutor(bool redirectOutput = true) : IProcessExecutor
             info.EnvironmentVariables[key] = value;
         }
 
-        return RunProcess(info, timeoutMs);
+        var processResult = RunProcess(info, timeoutMs, ref rawProcess);
+        return processResult;
     }
 
     /// <summary>
-    /// Starts a process with the given info. 
-    /// Checks for timeout after <paramref name="timeoutMs"/> milliseconds if the process is still running. 
+    /// Starts a process with the given info.
+    /// Checks for timeout after <paramref name="timeoutMs"/> milliseconds if the process is still running.
     /// </summary>
     /// <param name="info">The start info for the process</param>
     /// <param name="timeoutMs">The milliseconds to check for a timeout</param>
+    /// <param name="processOut">Raw process</param>
     /// <exception cref="OperationCanceledException"></exception>
     /// <returns></returns>
-    private ProcessResult RunProcess(ProcessStartInfo info, int timeoutMs)
+    private ProcessResult RunProcess(ProcessStartInfo info, int timeoutMs, ref Process processOut)
     {
         var process = new ProcessWrapper(info, RedirectOutput);
+        processOut = process.Process;
         using (process)
         {
             var timeoutValue = timeoutMs == 0 ? -1 : timeoutMs;
@@ -90,6 +108,7 @@ public class ProcessExecutor(bool redirectOutput = true) : IProcessExecutor
         private readonly StringBuilder _output = new StringBuilder();
         private readonly StringBuilder _error = new StringBuilder();
 
+        public Process Process => _process;
         public int ExitCode => _process.ExitCode;
         public string Output => _output.ToString();
         public string Error => _error.ToString();
