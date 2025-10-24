@@ -1,4 +1,5 @@
 using System.IO;
+using System.IO.Abstractions;
 using System.Linq;
 using Stryker.Abstractions.Options;
 
@@ -6,55 +7,55 @@ namespace Stryker.Core.Initialisation;
 
 public static class UnityStrykerOptionsExtension
 {
-    public static bool IsUnityProject(this IStrykerOptions? options)
+    public static bool IsUnityProject(this IStrykerOptions? options, IFileSystem fileSystem)
     {
         if (options == null)
             return false;
 
-        var path = options.GetUnityProjectDirectory();
-        return path.IsUnitProjectInternal();
+        var path = options.GetUnityProjectDirectory(fileSystem);
+        return path.IsUnitProjectInternal(fileSystem);
     }
 
-    public static bool IsUnityProject(this string basePath)
+    public static bool IsUnityProject(this string basePath, IFileSystem fileSystem)
     {
         if (string.IsNullOrEmpty(basePath))
             return false;
 
-        var path = basePath.GetUnityProjectDirectory();
-        return path.IsUnitProjectInternal();
+        var path = basePath.GetUnityProjectDirectory(fileSystem);
+        return path.IsUnitProjectInternal(fileSystem);
     }
 
-    private static bool IsUnitProjectInternal(this string path)
+    private static bool IsUnitProjectInternal(this string path, IFileSystem fileSystem)
     {
         if (string.IsNullOrEmpty(path))
             return false;
-        if (!File.Exists(path) && !Directory.Exists(path))
+        if (!fileSystem.File.Exists(path) && !fileSystem.Directory.Exists(path))
             return false;
-        var directories = Directory.GetDirectories(path);
-        return directories.Contains(Path.Combine(path, "Assets")) && directories.Contains(Path.Combine(path, "Packages")) && directories.Contains(Path.Combine(path, "ProjectSettings"));
+        var directories = fileSystem.Directory.GetDirectories(path);
+        return directories.Contains(fileSystem.Path.Combine(path, "Assets")) && directories.Contains(fileSystem.Path.Combine(path, "Packages")) && directories.Contains(fileSystem.Path.Combine(path, "ProjectSettings"));
     }
 
-    public static string GetUnityProjectDirectory(this IStrykerOptions options)
+    public static string GetUnityProjectDirectory(this IStrykerOptions options, IFileSystem fileSystem)
     {
-        return GetUnityProjectDirectory(options.ProjectPath ?? options.SolutionPath);
+        return GetUnityProjectDirectory(options?.ProjectPath ?? options?.SolutionPath ?? string.Empty, fileSystem);
     }
 
-    public static string GetUnityProjectDirectory(this string path)
+    public static string GetUnityProjectDirectory(this string path, IFileSystem fileSystem)
     {
         if (string.IsNullOrEmpty(path))
             return null;
 
-        if (!File.Exists(path) && !Directory.Exists(path))
+        if (!fileSystem.File.Exists(path) && !fileSystem.Directory.Exists(path))
             return null;
 
-        var isDirectory = File.GetAttributes(path).HasFlag(FileAttributes.Directory);
+        var isDirectory = fileSystem.File.GetAttributes(path).HasFlag(FileAttributes.Directory);
         if (isDirectory)
         {
             return path;
         }
         else
         {
-            return Directory.GetParent(path)!.FullName;
+            return fileSystem.Directory.GetParent(path)!.FullName;
         }
     }
 }

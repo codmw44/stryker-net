@@ -1,16 +1,18 @@
-using System.IO;
+using System.IO.Abstractions;
 using System.Text.Json;
 using Stryker.Abstractions.Options;
 
 namespace Stryker.TestRunner.Unity;
 
-public static class AsmdefParser
+public class AsmdefParser(IFileSystem fileSystem)
 {
-    public static UnityTestMode GetTestMode(string asmdefPath)
+    private readonly IFileSystem _fileSystem = fileSystem ?? new FileSystem();
+
+    public UnityTestMode GetTestMode(string asmdefPath)
     {
         try
         {
-            var json = File.ReadAllText(asmdefPath);
+            var json = _fileSystem.File.ReadAllText(asmdefPath);
             using var document = JsonDocument.Parse(json);
             var root = document.RootElement;
 
@@ -35,11 +37,11 @@ public static class AsmdefParser
         }
     }
 
-    public static bool IsTestAssembly(string asmdefPath)
+    public bool IsTestAssembly(string asmdefPath)
     {
         try
         {
-            var json = File.ReadAllText(asmdefPath);
+            var json = _fileSystem.File.ReadAllText(asmdefPath);
             using var document = JsonDocument.Parse(json);
             var root = document.RootElement;
 
@@ -65,11 +67,11 @@ public static class AsmdefParser
         }
     }
 
-    public static string GetAssemblyName(string asmdefPath)
+    public string GetAssemblyName(string asmdefPath)
     {
         //we should use name from asmdef instead of file name because file name can missmatch with assembly name
 
-        var json = File.ReadAllText(asmdefPath);
+        var json = _fileSystem.File.ReadAllText(asmdefPath);
         using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
 

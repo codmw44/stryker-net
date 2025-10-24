@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Abstractions;
 using System.Linq;
 using Buildalyzer;
 using Stryker.Abstractions;
@@ -21,7 +22,14 @@ public class UnityTestAssemblyAnalyzer
 {
     private readonly Dictionary<string, UnityTestAssemblyInfo> _testAssemblies = new();
     private readonly Dictionary<string, List<string>> _assemblyReferences = new();
-    private UnityAssemblyMapper _unityAssemblyMapper = new UnityAssemblyMapper();
+    private readonly UnityAssemblyMapper _unityAssemblyMapper;
+    private readonly AsmdefParser _asmdefParser;
+
+    public UnityTestAssemblyAnalyzer(IFileSystem fileSystem)
+    {
+        _unityAssemblyMapper = new UnityAssemblyMapper(fileSystem);
+        _asmdefParser = new AsmdefParser(fileSystem);
+    }
 
     public void AnalyzeSolution(IProjectAndTests project)
     {
@@ -82,10 +90,10 @@ public class UnityTestAssemblyAnalyzer
                             ? asmdefItem.ItemSpec
                             : Path.Combine(projectDir ?? "", asmdefItem.ItemSpec);
 
-                        if (AsmdefParser.IsTestAssembly(asmdefPath))
+                        if (_asmdefParser.IsTestAssembly(asmdefPath))
                         {
                             foundTestAssembly = true;
-                            var testMode = AsmdefParser.GetTestMode(asmdefPath);
+                            var testMode = _asmdefParser.GetTestMode(asmdefPath);
 
                             if (testMode == UnityTestMode.EditMode)
                             {
@@ -215,7 +223,7 @@ public class UnityTestAssemblyAnalyzer
                             : Path.Combine(projectDir ?? "", asmdefItem.ItemSpec);
 
                         // Use AsmdefParser to check if this is a test assembly
-                        if (AsmdefParser.IsTestAssembly(asmdefPath))
+                        if (_asmdefParser.IsTestAssembly(asmdefPath))
                         {
                             return true;
                         }

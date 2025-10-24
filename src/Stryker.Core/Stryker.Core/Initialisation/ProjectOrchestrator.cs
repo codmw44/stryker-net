@@ -34,16 +34,18 @@ public sealed class ProjectOrchestrator : IProjectOrchestrator
     private readonly IInitialBuildProcess _initialBuildProcess;
     private readonly IInputFileResolver _fileResolver;
     private ITestRunner _runner;
+    private readonly IFileSystem _fileSystem;
 
     public ProjectOrchestrator(IProjectMutator projectMutator = null,
         IInitialBuildProcess initialBuildProcess = null,
         IInputFileResolver fileResolver = null,
-        IInitialisationProcess initializationProcess = null)
+        IInitialisationProcess initializationProcess = null, IFileSystem fileSystem = null)
     {
         _projectMutator = projectMutator ?? new ProjectMutator();
         _initialBuildProcess = initialBuildProcess ?? new InitialBuildProcess();
         _logger = ApplicationLogging.LoggerFactory.CreateLogger<ProjectOrchestrator>();
         _fileResolver = fileResolver ?? new InputFileResolver();
+        _fileSystem = fileSystem ?? new FileSystem();
         _initializationProcess = initializationProcess;
     }
 
@@ -51,7 +53,7 @@ public sealed class ProjectOrchestrator : IProjectOrchestrator
         ITestRunner runner = null)
     {
         _initializationProcess ??= new InitialisationProcess(_fileResolver, _initialBuildProcess);
-        if (options.IsUnityProject())
+        if (options.IsUnityProject(_fileSystem))
         {
             _logger.LogInformation("Found Unity project. Run Unity project to generate sln and csproj files.");
             //updating solution path required because Unity projects on the first launch has no .csproj or .sln. These files are under .gitignore and generates after Unity launch
@@ -66,7 +68,7 @@ public sealed class ProjectOrchestrator : IProjectOrchestrator
             return [];
         }
 
-        if (!options.IsUnityProject()) //unity projects cannot be built out of Unity
+        if (!options.IsUnityProject(_fileSystem)) //unity projects cannot be built out of Unity
             _initializationProcess.BuildProjects(options, projectInfos);
 
         // create a test runner
@@ -77,7 +79,7 @@ public sealed class ProjectOrchestrator : IProjectOrchestrator
 
         var mutationTestProcesses = new ConcurrentBag<IMutationTestProcess>();
 
-        Parallel.ForEach(inputs, new ParallelOptions { MaxDegreeOfParallelism = options.IsUnityProject() ? 1 : -1 },
+        Parallel.ForEach(inputs, new ParallelOptions { MaxDegreeOfParallelism = options.IsUnityProject(_fileSystem) ? 1 : -1 },
             mutationTestInput =>
             {
                 mutationTestProcesses.Add(_projectMutator.MutateProject(options, mutationTestInput, reporters));

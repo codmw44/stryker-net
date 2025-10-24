@@ -118,7 +118,7 @@ public class StrykerInputs : IStrykerInputs
     {
         var basePath = BasePathInput.Validate(_fileSystem);
         var outputPath = OutputPathInput.Validate(_fileSystem);
-        var pathToUnity = PathToUnityInput.Validate();
+        var pathToUnity = PathToUnityInput.Validate(_fileSystem);
         var unityMemoryConsumptionLimitInMb = UnityMemoryConsumptionLimitInMbInput.Validate();
         var unityTestMode = UnityTestModeInput.Validate();
         var reportFileNameInput = ReportFileNameInput.Validate();
@@ -137,7 +137,7 @@ public class StrykerInputs : IStrykerInputs
             UnityMemoryConsumptionLimitInMb = unityMemoryConsumptionLimitInMb,
             UnityTestMode = unityTestMode,
             ReportFileName = reportFileNameInput,
-            Concurrency = ConcurrencyInput.Validate(basePath),
+            Concurrency = ConcurrencyInput.Validate(basePath, _fileSystem),
             MutationLevel = MutationLevelInput.Validate(),
             DevMode = DevModeInput.Validate(),
             MsBuildPath = MsBuildPathInput.Validate(_fileSystem),

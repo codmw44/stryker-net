@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Abstractions;
 using System.Linq;
 using Stryker.Abstractions;
 
@@ -8,6 +10,14 @@ namespace Stryker.TestRunner.Unity;
 public class UnityAssemblyMapper
 {
     private readonly Dictionary<string, string> _fileToAssemblyCache = new();
+    private readonly IFileSystem _fileSystem;
+    private readonly AsmdefParser _asmdefParser;
+
+    public UnityAssemblyMapper(IFileSystem fileSystem)
+    {
+        _fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
+        _asmdefParser = new AsmdefParser(_fileSystem);
+    }
 
     public string GetAssemblyForMutant(IMutant mutant)
     {
@@ -27,15 +37,15 @@ public class UnityAssemblyMapper
         var directory = Path.GetDirectoryName(normalizedPath);
         while (!string.IsNullOrEmpty(directory))
         {
-            var asmDefFiles = Directory.GetFiles(directory, "*.asmdef", SearchOption.TopDirectoryOnly);
+            var asmDefFiles = _fileSystem.Directory.GetFiles(directory, "*.asmdef", SearchOption.TopDirectoryOnly);
             if (asmDefFiles.Any())
             {
-                var assemblyName = AsmdefParser.GetAssemblyName(asmDefFiles.First());
+                var assemblyName = _asmdefParser.GetAssemblyName(asmDefFiles.First());
                 _fileToAssemblyCache[normalizedPath] = assemblyName;
                 return assemblyName;
             }
 
-            directory = Directory.GetParent(directory)?.FullName;
+            directory = _fileSystem.Directory.GetParent(directory)?.FullName;
         }
 
         return null;

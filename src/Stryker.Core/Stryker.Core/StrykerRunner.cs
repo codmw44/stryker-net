@@ -3,6 +3,7 @@ using System;
 #endif
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO.Abstractions;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using Stryker.Abstractions;
@@ -18,7 +19,6 @@ using Stryker.Core.Reporters;
 using Stryker.Utilities.Logging;
 using Stryker.TestRunner.Unity;
 using Stryker.TestRunner.Unity.RunUnity;
-using Stryker.TestRunner.Unity.RunUnity.UnityPath;
 
 namespace Stryker.Core;
 
@@ -32,10 +32,12 @@ public class StrykerRunner : IStrykerRunner
     private IEnumerable<IMutationTestProcess> _mutationTestProcesses;
     private ILogger _logger;
     private readonly IReporterFactory _reporterFactory;
+    private readonly IFileSystem _fileSystem;
 
     public StrykerRunner(IEnumerable<IMutationTestProcess> mutationTestProcesses = null,
-        IReporterFactory reporterFactory = null)
+        IReporterFactory reporterFactory = null, IFileSystem fileSystem = null)
     {
+        _fileSystem = fileSystem ?? new FileSystem();
         _mutationTestProcesses = mutationTestProcesses ?? new List<IMutationTestProcess>();
         _reporterFactory = reporterFactory ?? new ReporterFactory();
     }
@@ -66,10 +68,10 @@ public class StrykerRunner : IStrykerRunner
         try
         {
             ITestRunner runner = null;
-            if (options.IsUnityProject())
+            if (options.IsUnityProject(_fileSystem))
             {
                 options.OptimizationMode = OptimizationModes.None; //unity test runner doesn't support any coverage data yet
-                runner = new UnityTestRunner(options, loggerFactory.CreateLogger<UnityTestRunner>(), RunUnity.GetSingleInstance());
+                runner = new UnityTestRunner(options, loggerFactory.CreateLogger<UnityTestRunner>(), RunUnity.GetSingleInstance(), _fileSystem);
             }
 
             // Mutate

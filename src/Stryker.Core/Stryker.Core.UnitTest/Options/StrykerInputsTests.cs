@@ -5,6 +5,7 @@ using Stryker.Abstractions.Options.Inputs;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Stryker.Abstractions.Baseline;
 using Stryker.Abstractions.Options;
+using Stryker.Core.Options.Inputs;
 
 namespace Stryker.Core.UnitTest.Options;
 
@@ -50,6 +51,9 @@ public class StrykerInputsTests : TestBase
         ThresholdLowInput = new ThresholdLowInput(),
         WithBaselineInput = new WithBaselineInput(),
         BreakOnInitialTestFailureInput = new BreakOnInitialTestFailureInput(),
+        PathToUnityInput = new PathToUnityInput(),
+        UnityMemoryConsumptionLimitInMbInput = new UnityMemoryConsumptionLimitInMbInput(),
+        UnityTestModeInput = new UnityTestModeInput(),
     };
 
     [TestMethod]
@@ -187,5 +191,35 @@ public class StrykerInputsTests : TestBase
         result.BaselineProvider.ShouldBe(BaselineProvider.Disk);
         result.AzureFileStorageSas.ShouldBe(string.Empty);
         result.AzureFileStorageUrl.ShouldBe(string.Empty);
+    }
+
+    [TestMethod]
+    public void UnityInputs_ShouldHaveDefaultValues()
+    {
+        var result = _target.ValidateAll();
+
+        result.PathToUnity.ShouldBeNull();
+        result.UnityMemoryConsumptionLimitInMb.ShouldBe(4000);
+        result.UnityTestMode.ShouldBe(UnityTestMode.All);
+    }
+
+    [TestMethod]
+    public void UnityTestModeInput_ShouldBeValidated()
+    {
+        _target.UnityTestModeInput.SuppliedInput = "EditMode";
+
+        var result = _target.ValidateAll();
+
+        result.UnityTestMode.ShouldBe(UnityTestMode.EditMode);
+    }
+
+    [TestMethod]
+    public void UnityMemoryConsumptionLimitInput_ShouldBeValidated()
+    {
+        _target.UnityMemoryConsumptionLimitInMbInput.SuppliedInput = 8000;
+
+        var result = _target.ValidateAll();
+
+        result.UnityMemoryConsumptionLimitInMb.ShouldBe(8000);
     }
 }

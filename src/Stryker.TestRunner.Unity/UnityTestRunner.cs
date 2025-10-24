@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Abstractions;
 using System.Linq;
 using System.Xml.Linq;
 using Buildalyzer;
 using Microsoft.Extensions.Logging;
 using Stryker.Abstractions;
 using Stryker.Abstractions.Options;
-using Stryker.Abstractions.ProjectComponents;
 using Stryker.Abstractions.Testing;
 using Stryker.TestRunner.Unity.RunUnity;
 using Stryker.TestRunner.Results;
@@ -17,16 +17,24 @@ using Stryker.Utilities.Buildalyzer;
 
 namespace Stryker.TestRunner.Unity;
 
-public class UnityTestRunner(
-    IStrykerOptions strykerOptions,
-    ILogger logger,
-    IRunUnity runUnity) : ITestRunner
+public class UnityTestRunner : ITestRunner
 {
+    private readonly IStrykerOptions strykerOptions;
+    private readonly ILogger logger;
+    private readonly IRunUnity runUnity;
     private bool _firstMutationTestStarted;
     private TestRunResult _initialRunTestResult;
     private TestSet _testSet;
     private Dictionary<string, IFrameworkTestDescription> _testDescriptions = new();
-    private readonly UnityTestAssemblyAnalyzer _assemblyAnalyzer = new();
+    private readonly UnityTestAssemblyAnalyzer _assemblyAnalyzer;
+
+    public UnityTestRunner(IStrykerOptions strykerOptions, ILogger logger, IRunUnity runUnity, IFileSystem fileSystem)
+    {
+        this.strykerOptions = strykerOptions;
+        this.logger = logger;
+        this.runUnity = runUnity;
+        _assemblyAnalyzer = new UnityTestAssemblyAnalyzer(fileSystem);
+    }
 
     public bool DiscoverTests(IAnalyzerResult assembly)
     {
